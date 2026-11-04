@@ -1,0 +1,18 @@
+# C++ tools build tree (cmake -S cpp -B cpp/build); json2rc/build is the committed converter
+cpp/build/
+cpp/build-*/
+_deps/
+
+# Generated creation bundles
+creation/web/bundle.js
+creation/web/player.js
+creation/web/flappy.html
+creation/web/flappy-debug.html
+
+# 3D oracle classes
+3d-oracle/classes/
+
+node_modules/
+__pycache__/
+out/
+.DS_Store

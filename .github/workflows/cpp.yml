@@ -1,0 +1,47 @@
+name: C++ tools
+
+on:
+  push:
+    paths: [".github/workflows/cpp.yml", "cpp/**"]
+  pull_request:
+    paths: [".github/workflows/cpp.yml", "cpp/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    env:
+      CMAKE_BUILD_PARALLEL_LEVEL: 3
+
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: kobento-tools }
+      - uses: actions/checkout@v4
+        with: { repository: camaelon/kobento-libs, path: kobento-libs }
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake pkg-config libfontconfig1-dev libfreetype-dev \
+            libgl1-mesa-dev libglfw3-dev libx11-dev libxext-dev libxrender-dev
+      - name: Configure
+        run: cmake -S kobento-tools/cpp -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Build the tools
+        run: cmake --build build --config Release
+      - name: Smoke-test
+        run: |
+          mkdir -p "$RUNNER_TEMP/rcx"
+          build/rc2json/rc2json report
+          build/rc2json/rc2json rc2json kobento-libs/samples/canvas.rc "$RUNNER_TEMP/rcx/canvas.json"
+          build/rc2image/rc2image kobento-libs/samples/canvas.rc "$RUNNER_TEMP/rcx/canvas.png" 400 400
+          test -s "$RUNNER_TEMP/rcx/canvas.json"
+          test -s "$RUNNER_TEMP/rcx/canvas.png"
