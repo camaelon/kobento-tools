@@ -54,9 +54,9 @@ As of androidx.dev build 16844723 (2026-11-05):
 | Kobento's 3D extension, not in androidx | SHW-15, 16, 17, 18, 19, 20: shown as "Not playable here" (Play anyway tries) |
 
 These are bugs in the player: SHW-23 to SHW-28 are byte-identical to the output of androidx's own
-JSON parser. kobento-mcp's `docs/EXAMPLES_FINDINGS.md` records each one (U60 to U64) with its fix;
+JSON parser. kobento-mcp's `docs/EXAMPLES_FINDINGS.md` records each one (U86 to U90) with its fix;
 with those five fixes applied to remote-core, every showcase above plays.
 
 The particle showcases (SHW-10, 12, 23) create their particle systems inside an `impulse`: the
-androidx player re-creates the particles every time `createParticles` paints, so as a plain
-command they would be reset every frame (U59).
+players (androidx's, and Kobento's, which follow it) re-create the particles every time
+`createParticles` paints, so as a plain command they would be reset every frame (U85).

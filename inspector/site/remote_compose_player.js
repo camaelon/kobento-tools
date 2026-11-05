@@ -18,7 +18,7 @@ var RC = (() => {
   };
   var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-  // players/typescript/src/web/main.ts
+  // ../kobento-ts/src/web/main.ts
   var main_exports = {};
   __export(main_exports, {
     RcPlayerElement: () => RcPlayerElement,
@@ -35,7 +35,7 @@ var RC = (() => {
     pinClock: () => pinClock
   });
 
-  // players/typescript/src/core/operations/Utils.ts
+  // ../kobento-ts/src/core/operations/Utils.ts
   var _dv = new DataView(new ArrayBuffer(4));
   function intBitsToFloat(bits) {
     _dv.setInt32(0, bits, false);
@@ -152,7 +152,7 @@ var RC = (() => {
     return a << 24 | r << 16 | g << 8 | b | 0;
   }
 
-  // players/typescript/src/core/operations/utilities/IntMap.ts
+  // ../kobento-ts/src/core/operations/utilities/IntMap.ts
   var NOT_PRESENT = -2147483648;
   var DEFAULT_CAPACITY = 16;
   var LOAD_FACTOR = 0.75;
@@ -259,7 +259,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/utilities/IntFloatMap.ts
+  // ../kobento-ts/src/core/operations/utilities/IntFloatMap.ts
   var NOT_PRESENT2 = -2147483648;
   var DEFAULT_CAPACITY2 = 16;
   var LOAD_FACTOR2 = 0.75;
@@ -338,7 +338,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/utilities/IntIntMap.ts
+  // ../kobento-ts/src/core/operations/utilities/IntIntMap.ts
   var NOT_PRESENT3 = -2147483648;
   var DEFAULT_CAPACITY3 = 16;
   var LOAD_FACTOR3 = 0.75;
@@ -410,7 +410,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/RemoteComposeState.ts
+  // ../kobento-ts/src/core/RemoteComposeState.ts
   var _RemoteComposeState = class _RemoteComposeState {
     constructor() {
       this.mIntDataMap = new IntMap();
@@ -742,7 +742,7 @@ var RC = (() => {
   _RemoteComposeState.MAX_DATA = 1e4;
   var RemoteComposeState = _RemoteComposeState;
 
-  // players/typescript/src/core/RemoteClock.ts
+  // ../kobento-ts/src/core/RemoteClock.ts
   function createSnapshot(millis) {
     const d = new Date(millis);
     const year = d.getFullYear();
@@ -785,7 +785,7 @@ var RC = (() => {
   };
   var SYSTEM_CLOCK = SystemClock;
 
-  // players/typescript/src/core/OperationMeasurement.ts
+  // ../kobento-ts/src/core/OperationMeasurement.ts
   var INSTANCE_ID = /* @__PURE__ */ Symbol("rcMeasureId");
   var OperationMeasurement = class {
     constructor(sink) {
@@ -908,7 +908,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/RemoteContext.ts
+  // ../kobento-ts/src/core/RemoteContext.ts
   var _RemoteContext = class _RemoteContext {
     constructor(clock = SYSTEM_CLOCK) {
       this.mRemoteComposeState = new RemoteComposeState();
@@ -1219,7 +1219,7 @@ var RC = (() => {
   _RemoteContext.LAST_BASELINE = asNan(37);
   var RemoteContext = _RemoteContext;
 
-  // players/typescript/src/core/Operation.ts
+  // ../kobento-ts/src/core/Operation.ts
   var _Operation = class _Operation {
     constructor() {
       this.mDirty = true;
@@ -1257,7 +1257,7 @@ var RC = (() => {
   _Operation.ENABLE_DIRTY_FLAG_OPTIMIZATION = true;
   var Operation = _Operation;
 
-  // players/typescript/src/core/operations/Header.ts
+  // ../kobento-ts/src/core/operations/Header.ts
   var _Header = class _Header extends Operation {
     constructor(majorVersion, minorVersion, patchVersion, properties = null, width = 256, height = 256, capabilities = 0) {
       super();
@@ -1432,7 +1432,7 @@ var RC = (() => {
   _Header.DATA_TYPE_STRING = 3;
   var Header = _Header;
 
-  // players/typescript/src/core/operations/layout/ContainerEnd.ts
+  // ../kobento-ts/src/core/operations/layout/ContainerEnd.ts
   var _ContainerEnd = class _ContainerEnd extends Operation {
     write(buffer) {
       buffer.start(_ContainerEnd.OP_CODE);
@@ -1449,7 +1449,7 @@ var RC = (() => {
   _ContainerEnd.OP_CODE = 214;
   var ContainerEnd = _ContainerEnd;
 
-  // players/typescript/src/core/PaintOperation.ts
+  // ../kobento-ts/src/core/PaintOperation.ts
   var PTR_DEREFERENCE = 1 << 30;
   var VALUE_MASK = 65535;
   function isContainer(op) {
@@ -1493,7 +1493,7 @@ var RC = (() => {
   PaintOperation.PTR_DEREFERENCE = PTR_DEREFERENCE;
   PaintOperation.VALUE_MASK = VALUE_MASK;
 
-  // players/typescript/src/core/operations/utilities/easing/Easing.ts
+  // ../kobento-ts/src/core/operations/utilities/easing/Easing.ts
   var Easing = class {
     constructor() {
       this.mType = 0;
@@ -1513,7 +1513,7 @@ var RC = (() => {
   Easing.EASE_OUT_BOUNCE = 13;
   Easing.EASE_OUT_ELASTIC = 14;
 
-  // players/typescript/src/core/operations/utilities/easing/CubicEasing.ts
+  // ../kobento-ts/src/core/operations/utilities/easing/CubicEasing.ts
   var STANDARD = [0.4, 0, 0.2, 1];
   var ACCELERATE = [0.4, 0.05, 0.8, 0.7];
   var DECELERATE = [0, 0, 0.2, 0.95];
@@ -1606,7 +1606,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/utilities/easing/BounceCurve.ts
+  // ../kobento-ts/src/core/operations/utilities/easing/BounceCurve.ts
   var N1 = 7.5625;
   var D1 = 2.75;
   var BounceCurve = class extends Easing {
@@ -1646,7 +1646,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/utilities/easing/ElasticOutCurve.ts
+  // ../kobento-ts/src/core/operations/utilities/easing/ElasticOutCurve.ts
   var C4 = 2 * Math.PI / 3;
   var TWENTY_PI = 20 * Math.PI;
   var LOG_8 = Math.log(8);
@@ -1662,7 +1662,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/utilities/easing/MonotonicCurveFit.ts
+  // ../kobento-ts/src/core/operations/utilities/easing/MonotonicCurveFit.ts
   var MonotonicCurveFit = class _MonotonicCurveFit {
     constructor(time, y) {
       // same shape as mY
@@ -1776,7 +1776,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/utilities/easing/StepCurve.ts
+  // ../kobento-ts/src/core/operations/utilities/easing/StepCurve.ts
   var StepCurve = class _StepCurve extends Easing {
     constructor(params, offset, len) {
       super();
@@ -1813,7 +1813,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/utilities/easing/FloatAnimation.ts
+  // ../kobento-ts/src/core/operations/utilities/easing/FloatAnimation.ts
   var _dv2 = new DataView(new ArrayBuffer(4));
   function floatToRawIntBits2(v) {
     _dv2.setFloat32(0, v, false);
@@ -1972,7 +1972,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/utilities/easing/SpringStopEngine.ts
+  // ../kobento-ts/src/core/operations/utilities/easing/SpringStopEngine.ts
   var SpringStopEngine = class {
     constructor(parameters) {
       this.mDamping = 0.5;
@@ -2063,7 +2063,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/FloatExpression.ts
+  // ../kobento-ts/src/core/operations/FloatExpression.ts
   var ARR_SENTINEL = 2 ** 42;
   function arrIdFromStack(x) {
     return x >= ARR_SENTINEL ? x - ARR_SENTINEL | 0 : idFromNan(x);
@@ -2709,7 +2709,7 @@ var RC = (() => {
   _FloatExpression.ID_REGION_ARRAY = 2097152;
   var FloatExpression = _FloatExpression;
 
-  // players/typescript/src/core/operations/utilities/AnimatedFloatExpression.ts
+  // ../kobento-ts/src/core/operations/utilities/AnimatedFloatExpression.ts
   var ARR_SENTINEL2 = 2 ** 42;
   function arrIdFromStack2(x) {
     return x >= ARR_SENTINEL2 ? x - ARR_SENTINEL2 | 0 : idFromNan(x);
@@ -3174,7 +3174,7 @@ var RC = (() => {
   _AnimatedFloatExpression.ID_REGION_ARRAY = 2097152;
   var AnimatedFloatExpression = _AnimatedFloatExpression;
 
-  // players/typescript/src/core/operations/utilities/touch/VelocityEasing.ts
+  // ../kobento-ts/src/core/operations/utilities/touch/VelocityEasing.ts
   var Stage = class {
     constructor(n) {
       this.mStartV = 0;
@@ -3398,7 +3398,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/TouchExpression.ts
+  // ../kobento-ts/src/core/operations/TouchExpression.ts
   var _TouchExpression = class _TouchExpression extends Operation {
     constructor(id, exp, defValueBits, minBits, maxBits, touchEffects, velocityId, stopMode, stopSpec, easingSpec) {
       super();
@@ -3842,7 +3842,7 @@ var RC = (() => {
   _TouchExpression.STOP_NOTCHES_SINGLE_EVEN = 7;
   var TouchExpression = _TouchExpression;
 
-  // players/typescript/src/core/operations/layout/measure/ComponentMeasure.ts
+  // ../kobento-ts/src/core/operations/layout/measure/ComponentMeasure.ts
   var _ComponentMeasure = class _ComponentMeasure {
     constructor(id, x, y, w, h, visibility = _ComponentMeasure.VISIBLE) {
       this.mAllowsAnimation = true;
@@ -3935,7 +3935,7 @@ var RC = (() => {
   _ComponentMeasure.INVISIBLE = 2;
   var ComponentMeasure = _ComponentMeasure;
 
-  // players/typescript/src/core/operations/layout/animation/AnimationSpec.ts
+  // ../kobento-ts/src/core/operations/layout/animation/AnimationSpec.ts
   function intToAnimation(v) {
     switch (v & 255) {
       case 0:
@@ -4039,7 +4039,7 @@ var RC = (() => {
   _AnimationSpec.DISABLED = new _AnimationSpec(0, 0, Easing.CUBIC_STANDARD, 0, Easing.CUBIC_STANDARD, 0 /* FADE_IN */, 1 /* FADE_OUT */);
   var AnimationSpec = _AnimationSpec;
 
-  // players/typescript/src/core/operations/paint/PaintBundle.ts
+  // ../kobento-ts/src/core/operations/paint/PaintBundle.ts
   var _f32dv = new DataView(new ArrayBuffer(4));
   function intBitsToFloat2(bits) {
     _f32dv.setInt32(0, bits);
@@ -4494,7 +4494,7 @@ var RC = (() => {
   _PaintBundle.FILL_AND_STROKE = 2;
   var PaintBundle = _PaintBundle;
 
-  // players/typescript/src/core/operations/layout/animation/AnimateMeasure.ts
+  // ../kobento-ts/src/core/operations/layout/animation/AnimateMeasure.ts
   var AnimateMeasure = class {
     constructor(startTime, component, original, target, duration, durationVisibilityChange, enterAnimation = 0 /* FADE_IN */, exitAnimation = 1 /* FADE_OUT */, motionEasingType = Easing.CUBIC_STANDARD, visibilityEasingType = Easing.CUBIC_ACCELERATE) {
       this.mP = 0;
@@ -4814,7 +4814,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/layout/Component.ts
+  // ../kobento-ts/src/core/operations/layout/Component.ts
   var _Visibility = class _Visibility {
     static isGone(v) {
       if (v >> 4 > 0) return (v & _Visibility.OVERRIDE_GONE) === _Visibility.OVERRIDE_GONE;
@@ -5345,7 +5345,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/layout/measure/MeasurePass.ts
+  // ../kobento-ts/src/core/operations/layout/measure/MeasurePass.ts
   var MeasurePass = class {
     constructor() {
       this.mList = /* @__PURE__ */ new Map();
@@ -5387,7 +5387,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/layout/RootLayoutComponent.ts
+  // ../kobento-ts/src/core/operations/layout/RootLayoutComponent.ts
   var _RootLayoutComponent = class _RootLayoutComponent extends Component {
     constructor(componentId = -1) {
       super(componentId);
@@ -5539,7 +5539,7 @@ var RC = (() => {
   _RootLayoutComponent.OP_CODE = 200;
   var RootLayoutComponent = _RootLayoutComponent;
 
-  // players/typescript/src/core/TimeVariables.ts
+  // ../kobento-ts/src/core/TimeVariables.ts
   var TimeVariables = class {
     constructor(clock) {
       this.mLastAnimationTime = -1;
@@ -5576,7 +5576,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/layout/modifiers/ModifierOperations.ts
+  // ../kobento-ts/src/core/operations/layout/modifiers/ModifierOperations.ts
   var _WidthModifier = class _WidthModifier extends Operation {
     constructor(type, valueBits) {
       super();
@@ -7042,7 +7042,7 @@ var RC = (() => {
   _AccessibilitySemantics.OP_CODE = 250;
   var AccessibilitySemantics = _AccessibilitySemantics;
 
-  // players/typescript/src/core/operations/DataOperations.ts
+  // ../kobento-ts/src/core/operations/DataOperations.ts
   var NANMAP_PATH_BASE = 3145728;
   function isPathMarkerBits(b) {
     if (!isNaNBits(b)) return false;
@@ -7436,7 +7436,7 @@ var RC = (() => {
   _RootContentBehavior.LAYOUT_WRAP_CONTENT = 1;
   var RootContentBehavior = _RootContentBehavior;
 
-  // players/typescript/src/core/operations/StubOperations.ts
+  // ../kobento-ts/src/core/operations/StubOperations.ts
   var _ImpulseOperation = class _ImpulseOperation extends PaintOperation {
     constructor(duration, startAt) {
       super();
@@ -7843,7 +7843,7 @@ var RC = (() => {
   _TimeAttribute.TIME_DAY_OF_YEAR = 15;
   var TimeAttribute = _TimeAttribute;
 
-  // players/typescript/src/core/operations/loom/PatternOperations.ts
+  // ../kobento-ts/src/core/operations/loom/PatternOperations.ts
   var _ReferencedOperations = class _ReferencedOperations extends Operation {
     constructor(id) {
       super();
@@ -8191,7 +8191,7 @@ var RC = (() => {
     return new Ctor(loomManager, parent.getDocument(), ctx, blocks, parent.isSafeMode(), depth);
   }
 
-  // players/typescript/src/core/Compression.ts
+  // ../kobento-ts/src/core/Compression.ts
   var COMPRESS = 31;
   var COMPRESSION_NONE = 0;
   var COMPRESSION_DEFLATE = 1;
@@ -8427,7 +8427,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/WireBuffer.ts
+  // ../kobento-ts/src/core/WireBuffer.ts
   var _WireBuffer = class _WireBuffer {
     constructor(size = _WireBuffer.BUFFER_SIZE) {
       this.mIndex = 0;
@@ -8715,7 +8715,7 @@ var RC = (() => {
   _WireBuffer.BUFFER_SIZE = 1024 * 1024;
   var WireBuffer = _WireBuffer;
 
-  // players/typescript/src/core/operations/DrawBase4.ts
+  // ../kobento-ts/src/core/operations/DrawBase4.ts
   var DrawBase4 = class extends PaintOperation {
     // Constructed from the raw int32 bits of each coordinate (see read()).
     constructor(x1Bits, y1Bits, x2Bits, y2Bits) {
@@ -8748,7 +8748,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/DrawRect.ts
+  // ../kobento-ts/src/core/operations/DrawRect.ts
   var _DrawRect = class _DrawRect extends DrawBase4 {
     paintBase4(context, x1, y1, x2, y2) {
       context.drawRect(x1, y1, x2, y2);
@@ -8768,7 +8768,7 @@ var RC = (() => {
   _DrawRect.OP_CODE = 42;
   var DrawRect = _DrawRect;
 
-  // players/typescript/src/core/operations/DrawBase3.ts
+  // ../kobento-ts/src/core/operations/DrawBase3.ts
   var DrawBase3 = class extends PaintOperation {
     constructor(v1Bits, v2Bits, v3Bits) {
       super();
@@ -8796,7 +8796,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/DrawCircle.ts
+  // ../kobento-ts/src/core/operations/DrawCircle.ts
   var _DrawCircle = class _DrawCircle extends DrawBase3 {
     paintBase3(context, v1, v2, v3) {
       context.drawCircle(v1, v2, v3);
@@ -8811,7 +8811,7 @@ var RC = (() => {
   _DrawCircle.OP_CODE = 46;
   var DrawCircle = _DrawCircle;
 
-  // players/typescript/src/core/operations/DrawOval.ts
+  // ../kobento-ts/src/core/operations/DrawOval.ts
   var _DrawOval = class _DrawOval extends DrawBase4 {
     paintBase4(context, x1, y1, x2, y2) {
       context.drawOval(x1, y1, x2, y2);
@@ -8831,7 +8831,7 @@ var RC = (() => {
   _DrawOval.OP_CODE = 56;
   var DrawOval = _DrawOval;
 
-  // players/typescript/src/core/operations/DrawBase6.ts
+  // ../kobento-ts/src/core/operations/DrawBase6.ts
   var DrawBase6 = class extends PaintOperation {
     constructor(v1Bits, v2Bits, v3Bits, v4Bits, v5Bits, v6Bits) {
       super();
@@ -8871,7 +8871,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/DrawRoundRect.ts
+  // ../kobento-ts/src/core/operations/DrawRoundRect.ts
   var _DrawRoundRect = class _DrawRoundRect extends DrawBase6 {
     paintBase6(context, v1, v2, v3, v4, v5, v6) {
       context.drawRoundRect(v1, v2, v3, v4, v5, v6);
@@ -8893,7 +8893,7 @@ var RC = (() => {
   _DrawRoundRect.OP_CODE = 51;
   var DrawRoundRect = _DrawRoundRect;
 
-  // players/typescript/src/core/operations/DrawArc.ts
+  // ../kobento-ts/src/core/operations/DrawArc.ts
   var _DrawArc = class _DrawArc extends DrawBase6 {
     paintBase6(context, v1, v2, v3, v4, v5, v6) {
       context.drawArc(v1, v2, v3, v4, v5, v6);
@@ -8915,7 +8915,7 @@ var RC = (() => {
   _DrawArc.OP_CODE = 152;
   var DrawArc = _DrawArc;
 
-  // players/typescript/src/core/operations/DrawSector.ts
+  // ../kobento-ts/src/core/operations/DrawSector.ts
   var _DrawSector = class _DrawSector extends DrawBase6 {
     paintBase6(context, v1, v2, v3, v4, v5, v6) {
       context.drawSector(v1, v2, v3, v4, v5, v6);
@@ -8937,7 +8937,7 @@ var RC = (() => {
   _DrawSector.OP_CODE = 52;
   var DrawSector = _DrawSector;
 
-  // players/typescript/src/core/operations/Mesh2DGenerator.ts
+  // ../kobento-ts/src/core/operations/Mesh2DGenerator.ts
   var LAYOUT_POLAR = 1;
   var LAYOUT_RING = 2;
   var LAYOUT_FAN = 4;
@@ -9445,7 +9445,7 @@ var RC = (() => {
     return clamp255(a) << 24 | clamp255(r) << 16 | clamp255(g) << 8 | clamp255(b) | 0;
   }
 
-  // players/typescript/src/core/operations/Mesh2D.ts
+  // ../kobento-ts/src/core/operations/Mesh2D.ts
   var MESH_OP_OFFSET = 3211264;
   var MESH_ID_REGION_MASK = 7340032;
   var MESH_ID_REGION_ARRAY = 2097152;
@@ -9835,7 +9835,7 @@ var RC = (() => {
   _MatrixFromMesh2D.OP_CODE = 106;
   var MatrixFromMesh2D = _MatrixFromMesh2D;
 
-  // players/typescript/src/core/operations/DrawPath.ts
+  // ../kobento-ts/src/core/operations/DrawPath.ts
   var _DrawPath = class _DrawPath extends PaintOperation {
     constructor(pathId, start, end) {
       super();
@@ -9859,7 +9859,7 @@ var RC = (() => {
   _DrawPath.OP_CODE = 124;
   var DrawPath = _DrawPath;
 
-  // players/typescript/src/core/operations/DrawTweenPath.ts
+  // ../kobento-ts/src/core/operations/DrawTweenPath.ts
   var _DrawTweenPath = class _DrawTweenPath extends PaintOperation {
     constructor(path1Id, path2Id, tweenBits, startBits, endBits) {
       super();
@@ -9903,7 +9903,7 @@ var RC = (() => {
   _DrawTweenPath.OP_CODE = 125;
   var DrawTweenPath = _DrawTweenPath;
 
-  // players/typescript/src/core/operations/DrawContent.ts
+  // ../kobento-ts/src/core/operations/DrawContent.ts
   var _DrawContent = class _DrawContent extends PaintOperation {
     constructor() {
       super(...arguments);
@@ -9934,7 +9934,7 @@ var RC = (() => {
   _DrawContent.OP_CODE = 139;
   var DrawContent = _DrawContent;
 
-  // players/typescript/src/core/operations/DrawBitmap.ts
+  // ../kobento-ts/src/core/operations/DrawBitmap.ts
   var _DrawBitmap = class _DrawBitmap extends PaintOperation {
     constructor(imageId, leftBits, topBits, rightBits, bottomBits, cdId) {
       super();
@@ -9988,7 +9988,7 @@ var RC = (() => {
   _DrawBitmap.OP_CODE = 44;
   var DrawBitmap = _DrawBitmap;
 
-  // players/typescript/src/core/operations/DrawBitmapInt.ts
+  // ../kobento-ts/src/core/operations/DrawBitmapInt.ts
   var _DrawBitmapInt = class _DrawBitmapInt extends PaintOperation {
     constructor(imageId, srcL, srcT, srcR, srcB, dstL, dstT, dstR, dstB, cdId) {
       super();
@@ -10040,7 +10040,7 @@ var RC = (() => {
   _DrawBitmapInt.OP_CODE = 66;
   var DrawBitmapInt = _DrawBitmapInt;
 
-  // players/typescript/src/core/operations/utilities/ImageScaling.ts
+  // ../kobento-ts/src/core/operations/utilities/ImageScaling.ts
   var _ImageScaling = class _ImageScaling {
     constructor() {
       this.mFinalDstLeft = 0;
@@ -10152,7 +10152,7 @@ var RC = (() => {
   _ImageScaling.SCALE_FIXED_SCALE = 7;
   var ImageScaling = _ImageScaling;
 
-  // players/typescript/src/core/operations/DrawBitmapScaled.ts
+  // ../kobento-ts/src/core/operations/DrawBitmapScaled.ts
   var _DrawBitmapScaled = class _DrawBitmapScaled extends PaintOperation {
     // Args are raw int32 bits for the float fields (see read()).
     constructor(imageId, srcL, srcT, srcR, srcB, dstL, dstT, dstR, dstB, scaleType, scaleFactor, cdId) {
@@ -10263,7 +10263,7 @@ var RC = (() => {
   _DrawBitmapScaled.OP_CODE = 149;
   var DrawBitmapScaled = _DrawBitmapScaled;
 
-  // players/typescript/src/core/operations/DrawText.ts
+  // ../kobento-ts/src/core/operations/DrawText.ts
   var _DrawText = class _DrawText extends PaintOperation {
     constructor(textId, start, end, contextStart, contextEnd, xBits, yBits, rtl) {
       super();
@@ -10320,7 +10320,7 @@ var RC = (() => {
   _DrawText.OP_CODE = 43;
   var DrawText = _DrawText;
 
-  // players/typescript/src/core/operations/DrawTextOnPath.ts
+  // ../kobento-ts/src/core/operations/DrawTextOnPath.ts
   var _DrawTextOnPath = class _DrawTextOnPath extends PaintOperation {
     constructor(textId, pathId, hOffsetBits, vOffsetBits) {
       super();
@@ -10359,7 +10359,7 @@ var RC = (() => {
   _DrawTextOnPath.OP_CODE = 53;
   var DrawTextOnPath = _DrawTextOnPath;
 
-  // players/typescript/src/core/operations/DrawToBitmap.ts
+  // ../kobento-ts/src/core/operations/DrawToBitmap.ts
   var _DrawToBitmap = class _DrawToBitmap extends PaintOperation {
     constructor(bitmapId, mode, color) {
       super();
@@ -10382,7 +10382,7 @@ var RC = (() => {
   _DrawToBitmap.OP_CODE = 190;
   var DrawToBitmap = _DrawToBitmap;
 
-  // players/typescript/src/core/operations/DrawLine.ts
+  // ../kobento-ts/src/core/operations/DrawLine.ts
   var _DrawLine = class _DrawLine extends DrawBase4 {
     paintBase4(context, x1, y1, x2, y2) {
       context.drawLine(x1, y1, x2, y2);
@@ -10402,7 +10402,7 @@ var RC = (() => {
   _DrawLine.OP_CODE = 47;
   var DrawLine = _DrawLine;
 
-  // players/typescript/src/core/PaintContext.ts
+  // ../kobento-ts/src/core/PaintContext.ts
   var PaintContext = class {
     constructor(context) {
       this.mNeedsRepaint = false;
@@ -10495,7 +10495,7 @@ var RC = (() => {
   PaintContext.TEXT_COMPLEX = 8;
   PaintContext.TEXT_MEASURE_AUTOSIZE = 16;
 
-  // players/typescript/src/core/operations/DrawTextAnchored.ts
+  // ../kobento-ts/src/core/operations/DrawTextAnchored.ts
   var _DrawTextAnchored = class _DrawTextAnchored extends PaintOperation {
     constructor(textId, xBits, yBits, panXBits, panYBits, flags) {
       super();
@@ -10590,7 +10590,7 @@ var RC = (() => {
   _DrawTextAnchored.BASELINE_RELATIVE = 8;
   var DrawTextAnchored = _DrawTextAnchored;
 
-  // players/typescript/src/core/operations/MatrixOperations.ts
+  // ../kobento-ts/src/core/operations/MatrixOperations.ts
   function listenFloat(bits, context, op) {
     if (isNaNBits(bits)) context.listensTo(idFromBits(bits), op);
   }
@@ -10844,7 +10844,7 @@ var RC = (() => {
   _ClipPath.OP_CODE = 38;
   var ClipPath = _ClipPath;
 
-  // players/typescript/src/core/d3/Paint3DContext.ts
+  // ../kobento-ts/src/core/d3/Paint3DContext.ts
   var PROJECTION_PERSPECTIVE = 0;
   var M3_IDENTITY = 0;
   var M3_TRANSLATE = 1;
@@ -10870,7 +10870,7 @@ var RC = (() => {
     return !!ctx && typeof ctx.drawMesh3D === "function";
   }
 
-  // players/typescript/src/core/d3/MonotonicCurveFit.ts
+  // ../kobento-ts/src/core/d3/MonotonicCurveFit.ts
   var MonotonicCurveFit2 = class {
     constructor(time, y) {
       this.mExtrapolate = true;
@@ -11072,7 +11072,7 @@ var RC = (() => {
     return -6 * x2 * y2 + 6 * x * y2 + 6 * x2 * y1 - 6 * x * y1 + 3 * h * t2 * x2 + 3 * h * t1 * x2 - 2 * h * t2 * x - 4 * h * t1 * x + h * t1;
   }
 
-  // players/typescript/src/core/d3/Primitive3D.ts
+  // ../kobento-ts/src/core/d3/Primitive3D.ts
   var SPHERE = 0;
   var CYLINDER = 1;
   var CONE = 2;
@@ -13141,7 +13141,7 @@ var RC = (() => {
     }
   }
 
-  // players/typescript/src/core/operations/d3/Operations3D.ts
+  // ../kobento-ts/src/core/operations/d3/Operations3D.ts
   var MAX_INDICES = 6e5;
   var MAX_VERTS_FLOATS = 3 * 2e5;
   var MAX_LIGHTS = 32;
@@ -13595,7 +13595,7 @@ var RC = (() => {
   _MeshPrimitive.OP_CODE = 120;
   var MeshPrimitive = _MeshPrimitive;
 
-  // players/typescript/src/core/operations/d3/MeshExpression.ts
+  // ../kobento-ts/src/core/operations/d3/MeshExpression.ts
   var SURFACE_HEIGHT_FIELD = 1;
   var SURFACE_SPHERE = 2;
   var SURFACE_CYLINDER = 3;
@@ -13965,7 +13965,7 @@ var RC = (() => {
     return g;
   }
 
-  // players/typescript/src/core/operations/utilities/VectorRpn.ts
+  // ../kobento-ts/src/core/operations/utilities/VectorRpn.ts
   var fround2 = Math.fround;
   function fm2(a, b) {
     return fround2(a * b);
@@ -14300,7 +14300,7 @@ var RC = (() => {
     return r;
   }
 
-  // players/typescript/src/core/operations/VectorExpression.ts
+  // ../kobento-ts/src/core/operations/VectorExpression.ts
   var ID_REGION_MASK2 = 3 << 20;
   var ID_REGION_ARRAY2 = 2 << 20;
   function isResolvableBits3(bits) {
@@ -14399,7 +14399,7 @@ var RC = (() => {
   _VectorExpression.OP_CODE = 116;
   var VectorExpression = _VectorExpression;
 
-  // players/typescript/src/core/operations/ColorExpression.ts
+  // ../kobento-ts/src/core/operations/ColorExpression.ts
   var _ColorExpression = class _ColorExpression extends Operation {
     constructor(id, param1, param2, param3, param4) {
       super();
@@ -14575,7 +14575,7 @@ var RC = (() => {
   _ColorExpression.IDARGB_MODE = 6;
   var ColorExpression = _ColorExpression;
 
-  // players/typescript/src/core/operations/IntegerExpression.ts
+  // ../kobento-ts/src/core/operations/IntegerExpression.ts
   var _IntegerExpression = class _IntegerExpression extends Operation {
     constructor(id, mask, values) {
       super();
@@ -14785,7 +14785,7 @@ var RC = (() => {
   _IntegerExpression.OFFSET = 65536;
   var IntegerExpression = _IntegerExpression;
 
-  // players/typescript/src/core/operations/IntegerConstant.ts
+  // ../kobento-ts/src/core/operations/IntegerConstant.ts
   var _IntegerConstant = class _IntegerConstant extends Operation {
     constructor(id, value) {
       super();
@@ -14810,7 +14810,7 @@ var RC = (() => {
   _IntegerConstant.OP_CODE = 140;
   var IntegerConstant = _IntegerConstant;
 
-  // players/typescript/src/core/operations/BooleanConstant.ts
+  // ../kobento-ts/src/core/operations/BooleanConstant.ts
   var _BooleanConstant = class _BooleanConstant extends Operation {
     constructor(id, value) {
       super();
@@ -14831,7 +14831,7 @@ var RC = (() => {
   _BooleanConstant.OP_CODE = 143;
   var BooleanConstant = _BooleanConstant;
 
-  // players/typescript/src/core/operations/LongConstant.ts
+  // ../kobento-ts/src/core/operations/LongConstant.ts
   var _LongConstant = class _LongConstant extends Operation {
     constructor(id, value) {
       super();
@@ -14859,7 +14859,7 @@ var RC = (() => {
   _LongConstant.OP_CODE = 148;
   var LongConstant = _LongConstant;
 
-  // players/typescript/src/core/operations/ShaderData.ts
+  // ../kobento-ts/src/core/operations/ShaderData.ts
   var _ShaderData = class _ShaderData extends Operation {
     constructor(shaderId, shaderTextId, floatMap, intMap, bitmapMap) {
       super();
@@ -14995,7 +14995,7 @@ var RC = (() => {
   _ShaderData.OP_CODE = 45;
   var ShaderData = _ShaderData;
 
-  // players/typescript/src/core/operations/utilities/StringUtils.ts
+  // ../kobento-ts/src/core/operations/utilities/StringUtils.ts
   var GROUPING_NONE = 0;
   var GROUPING_BY4 = 2;
   var GROUPING_BY32 = 3;
@@ -15129,7 +15129,7 @@ var RC = (() => {
     return wrap(integerPartString + decSep + fact);
   }
 
-  // players/typescript/src/core/operations/TextFromFloat.ts
+  // ../kobento-ts/src/core/operations/TextFromFloat.ts
   var PAD_AFTER_NONE = 1;
   var PAD_AFTER_ZERO = 3;
   var PAD_PRE_NONE = 4;
@@ -15253,7 +15253,7 @@ var RC = (() => {
   _TextFromFloat.OP_CODE = 135;
   var TextFromFloat = _TextFromFloat;
 
-  // players/typescript/src/core/operations/TextMerge.ts
+  // ../kobento-ts/src/core/operations/TextMerge.ts
   var _TextMerge = class _TextMerge extends Operation {
     constructor(textId, srcId1, srcId2) {
       super();
@@ -15285,7 +15285,7 @@ var RC = (() => {
   _TextMerge.OP_CODE = 136;
   var TextMerge = _TextMerge;
 
-  // players/typescript/src/core/operations/ComponentValue.ts
+  // ../kobento-ts/src/core/operations/ComponentValue.ts
   var _ComponentValue = class _ComponentValue extends Operation {
     constructor(type, componentId, valueId) {
       super();
@@ -15377,7 +15377,7 @@ var RC = (() => {
   _ComponentValue.CONTENT_HEIGHT = 7;
   var ComponentValue = _ComponentValue;
 
-  // players/typescript/src/core/operations/DataMapIds.ts
+  // ../kobento-ts/src/core/operations/DataMapIds.ts
   var DataMap = class {
     constructor(names, types, ids) {
       this.mNames = names;
@@ -15419,7 +15419,7 @@ var RC = (() => {
   _DataMapIds.OP_CODE = 145;
   var DataMapIds = _DataMapIds;
 
-  // players/typescript/src/core/operations/DataListIds.ts
+  // ../kobento-ts/src/core/operations/DataListIds.ts
   var _DataListIds = class _DataListIds extends Operation {
     constructor(id, ids) {
       super();
@@ -15456,7 +15456,7 @@ var RC = (() => {
   _DataListIds.OP_CODE = 146;
   var DataListIds = _DataListIds;
 
-  // players/typescript/src/core/operations/DataListFloat.ts
+  // ../kobento-ts/src/core/operations/DataListFloat.ts
   var _DataListFloat = class _DataListFloat extends Operation {
     constructor(id, bits) {
       super();
@@ -15510,7 +15510,7 @@ var RC = (() => {
   _DataListFloat.OP_CODE = 147;
   var DataListFloat = _DataListFloat;
 
-  // players/typescript/src/core/operations/layout/LayoutComponentContent.ts
+  // ../kobento-ts/src/core/operations/layout/LayoutComponentContent.ts
   var _LayoutComponentContent = class _LayoutComponentContent extends Component {
     constructor(componentId) {
       super(componentId);
@@ -15532,7 +15532,7 @@ var RC = (() => {
   _LayoutComponentContent.OP_CODE = 201;
   var LayoutComponentContent = _LayoutComponentContent;
 
-  // players/typescript/src/core/operations/layout/CanvasContent.ts
+  // ../kobento-ts/src/core/operations/layout/CanvasContent.ts
   var _CanvasContent = class _CanvasContent extends Component {
     constructor(componentId) {
       super(componentId);
@@ -15554,7 +15554,7 @@ var RC = (() => {
   _CanvasContent.OP_CODE = 207;
   var CanvasContent = _CanvasContent;
 
-  // players/typescript/src/core/operations/DataDynamicListFloat.ts
+  // ../kobento-ts/src/core/operations/DataDynamicListFloat.ts
   var _DataDynamicListFloat = class _DataDynamicListFloat extends Operation {
     constructor(id, nbValuesBits) {
       super();
@@ -15622,7 +15622,7 @@ var RC = (() => {
   _DataDynamicListFloat.MAX_FLOAT_ARRAY = 2e3;
   var DataDynamicListFloat = _DataDynamicListFloat;
 
-  // players/typescript/src/core/operations/layout/modifiers/LayoutComputeOperation.ts
+  // ../kobento-ts/src/core/operations/layout/modifiers/LayoutComputeOperation.ts
   var _LayoutComputeOperation = class _LayoutComputeOperation extends Operation {
     constructor(type, boundsId, animateChanges) {
       super();
@@ -15733,7 +15733,7 @@ var RC = (() => {
   _LayoutComputeOperation.TYPE_POSITION = 1;
   var LayoutComputeOperation = _LayoutComputeOperation;
 
-  // players/typescript/src/core/operations/layout/LayoutComponent.ts
+  // ../kobento-ts/src/core/operations/layout/LayoutComponent.ts
   var LayoutComponent = class _LayoutComponent extends Component {
     constructor() {
       super(...arguments);
@@ -16101,9 +16101,6 @@ var RC = (() => {
       super.animatingBounds(context);
       this.updateComponentValues(context, this.mWidth, this.mHeight);
       this.layoutModifiers(this.mWidth, this.mHeight);
-      for (const child of this.mChildrenComponents) {
-        child.animatingBounds(context);
-      }
     }
     /** Walk modifiers reducing dimensions by padding and passing to decorators.
      *  Matches Java ComponentModifiers.layout(). */
@@ -16551,7 +16548,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/layout/measure/Size.ts
+  // ../kobento-ts/src/core/operations/layout/measure/Size.ts
   var Size = class {
     constructor(width = 0, height = 0) {
       this.mWidth = width;
@@ -16575,7 +16572,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/layout/managers/LayoutManager.ts
+  // ../kobento-ts/src/core/operations/layout/managers/LayoutManager.ts
   var LayoutManager = class extends LayoutComponent {
     constructor() {
       super(...arguments);
@@ -16804,7 +16801,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/layout/managers/BoxLayout.ts
+  // ../kobento-ts/src/core/operations/layout/managers/BoxLayout.ts
   var _BoxLayout = class _BoxLayout extends LayoutManager {
     constructor(componentId, animationId, horizontalPositioning, verticalPositioning) {
       super(componentId, animationId);
@@ -16912,7 +16909,7 @@ var RC = (() => {
   _BoxLayout.BOTTOM = 5;
   var BoxLayout = _BoxLayout;
 
-  // players/typescript/src/core/operations/layout/managers/RowLayout.ts
+  // ../kobento-ts/src/core/operations/layout/managers/RowLayout.ts
   var _RowLayout = class _RowLayout extends LayoutManager {
     constructor(componentId, animationId, horizontalPositioning, verticalPositioning, spacedBy) {
       super(componentId, animationId);
@@ -17206,7 +17203,7 @@ var RC = (() => {
   _RowLayout.SPACE_AROUND = 8;
   var RowLayout = _RowLayout;
 
-  // players/typescript/src/core/operations/layout/managers/ColumnLayout.ts
+  // ../kobento-ts/src/core/operations/layout/managers/ColumnLayout.ts
   var _ColumnLayout = class _ColumnLayout extends LayoutManager {
     constructor(componentId, animationId, horizontalPositioning, verticalPositioning, spacedBy) {
       super(componentId, animationId);
@@ -17479,7 +17476,7 @@ var RC = (() => {
   _ColumnLayout.SPACE_AROUND = 8;
   var ColumnLayout = _ColumnLayout;
 
-  // players/typescript/src/core/operations/layout/managers/CanvasLayout.ts
+  // ../kobento-ts/src/core/operations/layout/managers/CanvasLayout.ts
   var _CanvasLayout = class _CanvasLayout extends BoxLayout {
     constructor(componentId, animationId) {
       super(componentId, animationId, 0, 0);
@@ -17520,7 +17517,7 @@ var RC = (() => {
   _CanvasLayout.OP_CODE = 205;
   var CanvasLayout = _CanvasLayout;
 
-  // players/typescript/src/core/operations/Skip.ts
+  // ../kobento-ts/src/core/operations/Skip.ts
   var sLibraryApiLevel = 7;
   var sProfile = 0;
   var _Skip = class _Skip extends Operation {
@@ -17570,7 +17567,7 @@ var RC = (() => {
   _Skip.SKIP_IF_PROFILE_EXCLUDES = 6;
   var Skip = _Skip;
 
-  // players/typescript/src/core/operations/layout/managers/TextStyle.ts
+  // ../kobento-ts/src/core/operations/layout/managers/TextStyle.ts
   var P_ID = 1;
   var P_ANIMATION_ID = 2;
   var P_COLOR = 3;
@@ -17741,7 +17738,7 @@ var RC = (() => {
   _TextStyle.OP_CODE = 242;
   var TextStyle = _TextStyle;
 
-  // players/typescript/src/core/operations/ConditionalOperations.ts
+  // ../kobento-ts/src/core/operations/ConditionalOperations.ts
   var _ConditionalOperations = class _ConditionalOperations extends PaintOperation {
     constructor(type, aBits, bBits) {
       super();
@@ -17830,7 +17827,7 @@ var RC = (() => {
   _ConditionalOperations.TYPE_GTE = 5;
   var ConditionalOperations = _ConditionalOperations;
 
-  // players/typescript/src/core/operations/PathCreate.ts
+  // ../kobento-ts/src/core/operations/PathCreate.ts
   function isPathMarkerBits2(b) {
     if (!isNaNBits(b)) return false;
     const id = idFromBits(b);
@@ -17882,7 +17879,7 @@ var RC = (() => {
   _PathCreate.MOVE_NAN_BITS = 10 | -8388608 | 0;
   var PathCreate = _PathCreate;
 
-  // players/typescript/src/core/operations/PathAppend.ts
+  // ../kobento-ts/src/core/operations/PathAppend.ts
   function isPathMarkerBits3(b) {
     if (!isNaNBits(b)) return false;
     const id = idFromBits(b);
@@ -17955,7 +17952,7 @@ var RC = (() => {
   _PathAppend.OP_CODE = 160;
   var PathAppend = _PathAppend;
 
-  // players/typescript/src/core/operations/utilities/PathGenerator.ts
+  // ../kobento-ts/src/core/operations/utilities/PathGenerator.ts
   var MOVE_BITS = 10 | -8388608 | 0;
   var CUBIC_BITS = 14 | -8388608 | 0;
   var CLOSE_BITS = 15 | -8388608 | 0;
@@ -18185,7 +18182,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/PathExpression.ts
+  // ../kobento-ts/src/core/operations/PathExpression.ts
   var ARR_SENTINEL3 = 2 ** 42;
   var _PathExpression = class _PathExpression extends Operation {
     constructor(id, flags, minBits, maxBits, countBits, exprX, exprY) {
@@ -18643,7 +18640,7 @@ var RC = (() => {
   _PathExpression.ID_REGION_ARRAY = 2097152;
   var PathExpression = _PathExpression;
 
-  // players/typescript/src/core/operations/utilities/Matrix.ts
+  // ../kobento-ts/src/core/operations/utilities/Matrix.ts
   var _Matrix = class _Matrix {
     constructor(dim0 = 4, dim1 = 4) {
       this.mDim0 = 4;
@@ -18924,7 +18921,7 @@ var RC = (() => {
   _Matrix.sTempInVec = null;
   var Matrix = _Matrix;
 
-  // players/typescript/src/core/operations/utilities/MatrixOperations.ts
+  // ../kobento-ts/src/core/operations/utilities/MatrixOperations.ts
   var OFFSET2 = 3276800;
   function asNan2(v) {
     return intBitsToFloat(v | -8388608);
@@ -19110,7 +19107,7 @@ var RC = (() => {
   _MatrixOperations.OP_PROJECTION = OFFSET2 + 18;
   var MatrixOperations = _MatrixOperations;
 
-  // players/typescript/src/core/operations/MatrixExpression.ts
+  // ../kobento-ts/src/core/operations/MatrixExpression.ts
   var _MatrixExpression = class _MatrixExpression extends Operation {
     constructor(matrixId, type, bits) {
       super();
@@ -19172,7 +19169,7 @@ var RC = (() => {
   _MatrixExpression.OP_CODE = 187;
   var MatrixExpression = _MatrixExpression;
 
-  // players/typescript/src/core/operations/MatrixConstant.ts
+  // ../kobento-ts/src/core/operations/MatrixConstant.ts
   var _MatrixConstant = class _MatrixConstant extends Operation {
     constructor(matrixId, type, values) {
       super();
@@ -19204,7 +19201,7 @@ var RC = (() => {
   _MatrixConstant.OP_CODE = 186;
   var MatrixConstant = _MatrixConstant;
 
-  // players/typescript/src/core/operations/MatrixVectorMath.ts
+  // ../kobento-ts/src/core/operations/MatrixVectorMath.ts
   var _MatrixVectorMath = class _MatrixVectorMath extends Operation {
     constructor(type, outputs, matrixId, inputBits) {
       super();
@@ -19265,7 +19262,7 @@ var RC = (() => {
   _MatrixVectorMath.OP_CODE = 188;
   var MatrixVectorMath = _MatrixVectorMath;
 
-  // players/typescript/src/core/operations/TextTransform.ts
+  // ../kobento-ts/src/core/operations/TextTransform.ts
   var isWs = (c) => /\s/.test(c);
   var _TextTransform = class _TextTransform extends Operation {
     constructor(textId, srcId, startBits, lenBits, operation) {
@@ -19360,7 +19357,7 @@ var RC = (() => {
   _TextTransform.TEXT_UPPERCASE_FIRST_CHAR = 5;
   var TextTransform = _TextTransform;
 
-  // players/typescript/src/core/operations/FloatFunction.ts
+  // ../kobento-ts/src/core/operations/FloatFunction.ts
   var OFFSET3 = 3211264;
   var ID_REGION_MASK3 = 7340032;
   var ID_REGION_ARRAY4 = 2097152;
@@ -19491,7 +19488,7 @@ var RC = (() => {
   _FloatFunctionCall.OP_CODE = 166;
   var FloatFunctionCall = _FloatFunctionCall;
 
-  // players/typescript/src/core/operations/TextLookup.ts
+  // ../kobento-ts/src/core/operations/TextLookup.ts
   var _TextLookup = class _TextLookup extends Operation {
     constructor(textId, dataSetId, indexBits) {
       super();
@@ -19535,7 +19532,7 @@ var RC = (() => {
   _TextLookup.OP_CODE = 151;
   var TextLookup = _TextLookup;
 
-  // players/typescript/src/core/operations/ColorTheme.ts
+  // ../kobento-ts/src/core/operations/ColorTheme.ts
   var _ColorTheme = class _ColorTheme extends Operation {
     constructor(id, colorGroupId, lightModeIndex, darkModeIndex, lightModeFallback, darkModeFallback) {
       super();
@@ -19587,7 +19584,7 @@ var RC = (() => {
   _ColorTheme.THEME_DARK = -2;
   var ColorTheme = _ColorTheme;
 
-  // players/typescript/src/core/operations/ColorAttribute.ts
+  // ../kobento-ts/src/core/operations/ColorAttribute.ts
   var _ColorAttribute = class _ColorAttribute extends Operation {
     constructor(outputId, colorId, type) {
       super();
@@ -19668,7 +19665,7 @@ var RC = (() => {
   _ColorAttribute.COLOR_ALPHA = 6;
   var ColorAttribute = _ColorAttribute;
 
-  // players/typescript/src/core/operations/DataMapLookup.ts
+  // ../kobento-ts/src/core/operations/DataMapLookup.ts
   var TYPE_STRING = 0;
   var TYPE_INT = 1;
   var TYPE_FLOAT = 2;
@@ -19725,7 +19722,7 @@ var RC = (() => {
   _DataMapLookup.OP_CODE = 154;
   var DataMapLookup = _DataMapLookup;
 
-  // players/typescript/src/core/operations/TextMeasure.ts
+  // ../kobento-ts/src/core/operations/TextMeasure.ts
   var MEASURE_WIDTH = 0;
   var MEASURE_HEIGHT = 1;
   var MEASURE_LEFT = 2;
@@ -19779,7 +19776,7 @@ var RC = (() => {
   _TextMeasure.OP_CODE = 155;
   var TextMeasure = _TextMeasure;
 
-  // players/typescript/src/core/operations/TextAttribute.ts
+  // ../kobento-ts/src/core/operations/TextAttribute.ts
   var MEASURE_WIDTH2 = 0;
   var MEASURE_HEIGHT2 = 1;
   var MEASURE_LEFT2 = 2;
@@ -19842,7 +19839,7 @@ var RC = (() => {
   _TextAttribute.OP_CODE = 170;
   var TextAttribute = _TextAttribute;
 
-  // players/typescript/src/core/operations/TextLength.ts
+  // ../kobento-ts/src/core/operations/TextLength.ts
   var _TextLength = class _TextLength extends Operation {
     constructor(lengthId, textId) {
       super();
@@ -19872,7 +19869,7 @@ var RC = (() => {
   _TextLength.OP_CODE = 156;
   var TextLength = _TextLength;
 
-  // players/typescript/src/core/operations/TextSubtext.ts
+  // ../kobento-ts/src/core/operations/TextSubtext.ts
   var _TextSubtext = class _TextSubtext extends Operation {
     constructor(textId, srcId, startBits, lenBits) {
       super();
@@ -19932,7 +19929,7 @@ var RC = (() => {
   _TextSubtext.OP_CODE = 182;
   var TextSubtext = _TextSubtext;
 
-  // players/typescript/src/core/operations/ParticleOperations.ts
+  // ../kobento-ts/src/core/operations/ParticleOperations.ts
   var OFFSET4 = 3211264;
   var ID_REGION_MASK4 = 7340032;
   var ID_REGION_ARRAY5 = 2097152;
@@ -19994,7 +19991,6 @@ var RC = (() => {
   var _ParticlesCreateOp = class _ParticlesCreateOp extends Operation {
     constructor(id, particleCount, varId, equations) {
       super();
-      this.mInitialized = false;
       this.mContext = null;
       this.mId = id;
       this.mParticleCount = particleCount;
@@ -20020,13 +20016,15 @@ var RC = (() => {
         this.mOutEquations[j] = resolveEquation(this.mEquations[j], context);
       }
     }
+    // Every paint initialises the particles again, as the reference does (ParticlesCreate.paint).
+    // A system that persists is created in an impulse, which applies it once when its window
+    // opens, and moved in the impulse's ImpulseProcess; as a plain command it restarts every frame.
     apply(context) {
-      if (context.mMode === "PAINT" /* PAINT */ && !this.mInitialized) {
+      if (context.mMode === "PAINT" /* PAINT */) {
         this.mContext = context;
         for (let i = 0; i < this.mParticleCount; i++) {
           this.initializeParticle(i, context);
         }
-        this.mInitialized = true;
       }
     }
     initializeParticle(i, context) {
@@ -20322,7 +20320,7 @@ var RC = (() => {
   _ParticlesCompareOp.OP_CODE = 194;
   var ParticlesCompareOp = _ParticlesCompareOp;
 
-  // players/typescript/src/core/operations/layout/managers/FlowLayout.ts
+  // ../kobento-ts/src/core/operations/layout/managers/FlowLayout.ts
   var _FlowLayout = class _FlowLayout extends RowLayout {
     constructor(componentId, animationId, horizontalPositioning, verticalPositioning, spacedBy) {
       super(componentId, animationId, horizontalPositioning, verticalPositioning, spacedBy);
@@ -20481,7 +20479,7 @@ var RC = (() => {
   _FlowLayout.OP_CODE = 240;
   var FlowLayout = _FlowLayout;
 
-  // players/typescript/src/core/operations/layout/LoopOperation.ts
+  // ../kobento-ts/src/core/operations/layout/LoopOperation.ts
   var _LoopOperation = class _LoopOperation extends Operation {
     constructor(indexId, fromBits, stepBits, untilBits) {
       super();
@@ -20559,7 +20557,7 @@ var RC = (() => {
   _LoopOperation.OP_CODE = 215;
   var LoopOperation = _LoopOperation;
 
-  // players/typescript/src/core/operations/layout/managers/CoreText.ts
+  // ../kobento-ts/src/core/operations/layout/managers/CoreText.ts
   var P_INT = 1;
   var P_FLOAT = 2;
   var P_SHORT = 3;
@@ -21176,7 +21174,7 @@ var RC = (() => {
   _CoreText.OP_CODE = 239;
   var CoreText = _CoreText;
 
-  // players/typescript/src/core/operations/layout/managers/TextLayout.ts
+  // ../kobento-ts/src/core/operations/layout/managers/TextLayout.ts
   var FLAG_IS_DYNAMIC_COLOR = 1;
   var _TextLayout = class _TextLayout extends CoreText {
     deepToString(indent) {
@@ -21242,7 +21240,7 @@ var RC = (() => {
   _TextLayout.OP_CODE = 208;
   var TextLayout = _TextLayout;
 
-  // players/typescript/src/core/operations/layout/managers/FitBoxLayout.ts
+  // ../kobento-ts/src/core/operations/layout/managers/FitBoxLayout.ts
   var _FitBoxLayout = class _FitBoxLayout extends LayoutManager {
     constructor(componentId, animationId, horizontalPositioning, verticalPositioning) {
       super(componentId, animationId);
@@ -21409,7 +21407,7 @@ var RC = (() => {
   _FitBoxLayout.BOTTOM = 5;
   var FitBoxLayout = _FitBoxLayout;
 
-  // players/typescript/src/core/operations/layout/managers/CollapsiblePriority.ts
+  // ../kobento-ts/src/core/operations/layout/managers/CollapsiblePriority.ts
   var FLOAT_MAX = 34028234663852886e22;
   function javaInt(v) {
     if (Number.isNaN(v)) return 0;
@@ -21524,7 +21522,7 @@ var RC = (() => {
     return { preDropCount, preDropMain, preDropCross, kept, keptMain, keptCross };
   }
 
-  // players/typescript/src/core/operations/layout/managers/CollapsibleRowLayout.ts
+  // ../kobento-ts/src/core/operations/layout/managers/CollapsibleRowLayout.ts
   var _CollapsibleRowLayout = class _CollapsibleRowLayout extends RowLayout {
     constructor(componentId, animationId, horizontalPositioning, verticalPositioning, spacedBy) {
       super(componentId, animationId, horizontalPositioning, verticalPositioning, spacedBy);
@@ -21645,7 +21643,7 @@ var RC = (() => {
   _CollapsibleRowLayout.OP_CODE = 230;
   var CollapsibleRowLayout = _CollapsibleRowLayout;
 
-  // players/typescript/src/core/operations/layout/managers/CollapsibleColumnLayout.ts
+  // ../kobento-ts/src/core/operations/layout/managers/CollapsibleColumnLayout.ts
   var _CollapsibleColumnLayout = class _CollapsibleColumnLayout extends ColumnLayout {
     constructor(componentId, animationId, horizontalPositioning, verticalPositioning, spacedBy) {
       super(componentId, animationId, horizontalPositioning, verticalPositioning, spacedBy);
@@ -21766,7 +21764,7 @@ var RC = (() => {
   _CollapsibleColumnLayout.OP_CODE = 233;
   var CollapsibleColumnLayout = _CollapsibleColumnLayout;
 
-  // players/typescript/src/core/operations/IdLookup.ts
+  // ../kobento-ts/src/core/operations/IdLookup.ts
   var _IdLookup = class _IdLookup extends Operation {
     constructor(textId, dataSetId, indexBits) {
       super();
@@ -21808,7 +21806,7 @@ var RC = (() => {
   _IdLookup.OP_CODE = 192;
   var IdLookup = _IdLookup;
 
-  // players/typescript/src/core/operations/UpdateDynamicFloatList.ts
+  // ../kobento-ts/src/core/operations/UpdateDynamicFloatList.ts
   var _UpdateDynamicFloatList = class _UpdateDynamicFloatList extends Operation {
     constructor(arrayId, indexBits, valueBits) {
       super();
@@ -21860,7 +21858,7 @@ var RC = (() => {
   _UpdateDynamicFloatList.OP_CODE = 198;
   var UpdateDynamicFloatList = _UpdateDynamicFloatList;
 
-  // players/typescript/src/core/operations/layout/managers/ImageLayout.ts
+  // ../kobento-ts/src/core/operations/layout/managers/ImageLayout.ts
   var _ImageLayout = class _ImageLayout extends LayoutManager {
     constructor(componentId, animationId, bitmapId, scaleType, alphaBits) {
       super(componentId, animationId);
@@ -21970,7 +21968,7 @@ var RC = (() => {
   _ImageLayout.OP_CODE = 234;
   var ImageLayout = _ImageLayout;
 
-  // players/typescript/src/core/operations/layout/managers/StateLayout.ts
+  // ../kobento-ts/src/core/operations/layout/managers/StateLayout.ts
   var _StateLayout = class _StateLayout extends LayoutManager {
     constructor(componentId, animationId, indexId) {
       super(componentId, animationId);
@@ -22296,7 +22294,7 @@ var RC = (() => {
   _StateLayout.OP_CODE = 217;
   var StateLayout = _StateLayout;
 
-  // players/typescript/src/core/operations/layout/modifiers/ActionOperations.ts
+  // ../kobento-ts/src/core/operations/layout/modifiers/ActionOperations.ts
   var _HostActionOperation = class _HostActionOperation extends Operation {
     constructor(actionId) {
       super();
@@ -22461,7 +22459,7 @@ var RC = (() => {
   _ValueFloatChangeAction.OP_CODE = 222;
   var ValueFloatChangeAction = _ValueFloatChangeAction;
 
-  // players/typescript/src/core/operations/utilities/ToneSynthesizer.ts
+  // ../kobento-ts/src/core/operations/utilities/ToneSynthesizer.ts
   var _ToneSynthesizer = class _ToneSynthesizer {
     /**
      * Synthesize raw 16-bit little-endian mono PCM bytes.
@@ -22741,7 +22739,7 @@ var RC = (() => {
     return Number.isFinite(x) ? x : d;
   }
 
-  // players/typescript/src/core/operations/SoundOperations.ts
+  // ../kobento-ts/src/core/operations/SoundOperations.ts
   var _SoundData = class _SoundData extends Operation {
     constructor(soundId, data) {
       super();
@@ -22896,7 +22894,7 @@ var RC = (() => {
   _PlaySound.OP_CODE = 141;
   var PlaySound = _PlaySound;
 
-  // players/typescript/src/core/operations/layout/managers/Custom.ts
+  // ../kobento-ts/src/core/operations/layout/managers/Custom.ts
   var _Custom = class _Custom extends LayoutManager {
     constructor(componentId, animationId, configId, properties) {
       super(componentId, animationId);
@@ -22963,7 +22961,7 @@ var RC = (() => {
   _Custom.OP_CODE = 93;
   var Custom = _Custom;
 
-  // players/typescript/src/core/operations/UnsupportedOperations.ts
+  // ../kobento-ts/src/core/operations/UnsupportedOperations.ts
   var UnsupportedOperation = class extends Operation {
     write(_buffer) {
     }
@@ -23210,7 +23208,7 @@ var RC = (() => {
   _RemStub.OP_CODE = 185;
   var RemStub = _RemStub;
 
-  // players/typescript/src/core/Operations.ts
+  // ../kobento-ts/src/core/Operations.ts
   var _Operations = class _Operations {
     static init() {
       if (_Operations.initialized) return;
@@ -23410,7 +23408,7 @@ var RC = (() => {
   _Operations.initialized = false;
   var Operations = _Operations;
 
-  // players/typescript/src/core/operations/loom/LoomWireBuffer.ts
+  // ../kobento-ts/src/core/operations/loom/LoomWireBuffer.ts
   var LoomWireBuffer = class extends WireBuffer {
     constructor(wrapped, context) {
       super(1);
@@ -23547,7 +23545,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/RemoteComposeBuffer.ts
+  // ../kobento-ts/src/core/RemoteComposeBuffer.ts
   var VARIABLE_PROVIDERS = /* @__PURE__ */ new Set([
     45,
     64,
@@ -23638,7 +23636,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/loom/nestContainers.ts
+  // ../kobento-ts/src/core/operations/loom/nestContainers.ts
   function isContainer2(op) {
     return typeof op.getList === "function" && !(op instanceof ContainerEnd);
   }
@@ -23695,7 +23693,7 @@ var RC = (() => {
     return finalOps;
   }
 
-  // players/typescript/src/core/operations/loom/ExpansionContext.ts
+  // ../kobento-ts/src/core/operations/loom/ExpansionContext.ts
   var MAX_EXPANSION_DEPTH = 64;
   var ExpansionContext = class _ExpansionContext {
     constructor(loomManager, document2, remapContext, blocks, safeMode = false, depth = 0) {
@@ -23795,7 +23793,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/loom/RemapContext.ts
+  // ../kobento-ts/src/core/operations/loom/RemapContext.ts
   var RemapContext = class _RemapContext {
     constructor(a, document2, isInsideMacro) {
       if (a instanceof Map) {
@@ -23922,7 +23920,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/operations/loom/LoomManager.ts
+  // ../kobento-ts/src/core/operations/loom/LoomManager.ts
   var LoomManager = class {
     constructor() {
       this.mMacros = /* @__PURE__ */ new Map();
@@ -23976,7 +23974,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/core/CoreDocument.ts
+  // ../kobento-ts/src/core/CoreDocument.ts
   var Version = class {
     constructor(major, minor, patch) {
       this.mMajorVersion = major;
@@ -24902,7 +24900,7 @@ var RC = (() => {
   _CoreDocument.DOCUMENT_API_LEVEL = 8;
   var CoreDocument = _CoreDocument;
 
-  // players/typescript/src/core/d3/Matrix4.ts
+  // ../kobento-ts/src/core/d3/Matrix4.ts
   var fround3 = Math.fround;
   function fm3(a, b) {
     return fround3(a * b);
@@ -25108,7 +25106,7 @@ var RC = (() => {
     out3[2] = fa3(fa3(fm3(m[2], x), fm3(m[6], y)), fm3(m[10], z));
   }
 
-  // players/typescript/src/core/d3/Rasterizer.ts
+  // ../kobento-ts/src/core/d3/Rasterizer.ts
   var fround4 = Math.fround;
   function f2i(v) {
     if (Number.isNaN(v)) {
@@ -25464,7 +25462,7 @@ var RC = (() => {
     }
   }
 
-  // players/typescript/src/core/d3/SoftwarePaint3DContext.ts
+  // ../kobento-ts/src/core/d3/SoftwarePaint3DContext.ts
   var fround5 = Math.fround;
   function fm4(a, b) {
     return fround5(a * b);
@@ -26301,7 +26299,7 @@ var RC = (() => {
     }
   };
 
-  // players/typescript/src/web/WebGL3DRenderer.ts
+  // ../kobento-ts/src/web/WebGL3DRenderer.ts
   var VERT = `#version 300 es
 precision highp float;
 layout(location = 0) in vec2 aPos;      // window pixels, y down
@@ -26523,7 +26521,7 @@ void main() {
     }
   };
 
-  // players/typescript/src/core/shader/AgslTokenizer.ts
+  // ../kobento-ts/src/core/shader/AgslTokenizer.ts
   var IDENT_START = /[a-zA-Z_]/;
   var IDENT_CONT = /[a-zA-Z0-9_]/;
   var DIGIT = /[0-9]/;
@@ -26629,7 +26627,7 @@ void main() {
     return tokens;
   }
 
-  // players/typescript/src/core/shader/AgslTranspiler.ts
+  // ../kobento-ts/src/core/shader/AgslTranspiler.ts
   var TYPE_MAP = {
     "half4": "vec4",
     "half3": "vec3",
@@ -26863,7 +26861,7 @@ void main() {
     return tok.value;
   }
 
-  // players/typescript/src/web/shader/WebGLShaderRenderer.ts
+  // ../kobento-ts/src/web/shader/WebGLShaderRenderer.ts
   var VERTEX_SHADER = `#version 300 es
 in vec2 a_position;
 void main() {
@@ -27082,7 +27080,7 @@ void main() {
     }
   };
 
-  // players/typescript/src/web/CanvasPaintContext.ts
+  // ../kobento-ts/src/web/CanvasPaintContext.ts
   function argbToRgba(argb) {
     const a = (argb >>> 24 & 255) / 255;
     const r = argb >>> 16 & 255;
@@ -29439,7 +29437,7 @@ void main() {
   _CanvasPaintContext.supersample3D = 1;
   var CanvasPaintContext = _CanvasPaintContext;
 
-  // players/typescript/src/core/DefaultSystemColors.ts
+  // ../kobento-ts/src/core/DefaultSystemColors.ts
   function C(c) {
     return c | 0;
   }
@@ -29654,7 +29652,7 @@ void main() {
     return DEFAULT_SYSTEM_COLORS[name];
   }
 
-  // players/typescript/src/web/WebRemoteContext.ts
+  // ../kobento-ts/src/web/WebRemoteContext.ts
   var WebRemoteContext = class extends RemoteContext {
     constructor(paintContext, clock = SYSTEM_CLOCK) {
       super(clock);
@@ -29955,7 +29953,7 @@ void main() {
     }
   };
 
-  // players/typescript/src/web/CustomHosts.ts
+  // ../kobento-ts/src/web/CustomHosts.ts
   function parseEmbedConfig(config, defaultFit = "fit") {
     const out = {
       kind: "",
@@ -30476,7 +30474,7 @@ void main() {
     }
   };
 
-  // players/typescript/src/web/RcPlayerElement.ts
+  // ../kobento-ts/src/web/RcPlayerElement.ts
   function base64ToArrayBuffer(base64) {
     const binary = atob(base64);
     const bytes = new Uint8Array(binary.length);
@@ -30608,7 +30606,7 @@ void main() {
   };
   RcPlayerElement.observedAttributes = ["src", "data", "width", "height", "theme", "background"];
 
-  // players/typescript/src/core/ClockPin.ts
+  // ../kobento-ts/src/core/ClockPin.ts
   var PIN_EPOCH = new Date(2026, 0, 1, 0, 0, 0, 0).getTime();
   function pinClock(player, seconds, elapsed = seconds) {
     const doc = player && player.document;
@@ -30630,7 +30628,7 @@ void main() {
     return pinned;
   }
 
-  // players/typescript/src/web/HostApi.ts
+  // ../kobento-ts/src/web/HostApi.ts
   var TYPES = ["string", "float", "color", "image", "int", "long", "float_array"];
   var hex = (argb) => "#" + (argb >>> 0).toString(16).toUpperCase().padStart(8, "0");
   function parseColor(v) {
@@ -30799,7 +30797,7 @@ void main() {
     };
   }
 
-  // players/typescript/src/web/main.ts
+  // ../kobento-ts/src/web/main.ts
   var TOUCH_SLOP = 8;
   var RcdPlayer = class {
     constructor(canvas) {

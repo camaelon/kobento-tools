@@ -53,8 +53,9 @@ commands, the matrix stack, `loop`, `conditionalOperations`, paths (`drawPath` f
 deferred materialisation, and the full expression compiler — operators, 43 functions, 107 system
 variables, `componentWidth()`/`componentHeight()`.
 
-A particle system belongs in an `impulse`: the androidx player re-creates the particles every time
-`createParticles` paints, so as a plain canvas command they are reset every frame. The impulse runs
+A particle system belongs in an `impulse`: the players (androidx's, and Kobento's C++ and TypeScript
+ones, which follow it) re-create the particles every time `createParticles` paints, so as a plain
+canvas command they are reset every frame. The impulse runs
 its commands once when its window opens and its `impulseProcess` every frame after:
 
 ```json
