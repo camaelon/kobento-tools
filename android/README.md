@@ -33,6 +33,14 @@ version: `./gradlew -PremoteVersion=1.0.0-alpha23 installDebug`.
 The player's API is `@RestrictTo(LIBRARY_GROUP)` in the alphas, so the `RestrictedApi` lint check is
 off.
 
+## Frame rate
+
+The player's frame budget is off. Its defaults (60 fps at most, 10 fps on average over a 10 s
+window) keep a launcher's widgets cheap, but a demo slows to 10 fps after ten seconds. The app
+raises both limits to the display's refresh rate, and turns off the player's Choreographer path,
+which drew one frame every two vsyncs. On the emulator SHW-26 went from 9 to about 50 fps and SHW-12
+to 60; a document that waits for something (a clock's next minute, a touch) still sleeps.
+
 ## Density
 
 The showcases have no density header: `densityBehavior` needs API level 8, and they are level 7.

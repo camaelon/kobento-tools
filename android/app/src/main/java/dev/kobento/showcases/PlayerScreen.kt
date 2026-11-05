@@ -1,12 +1,18 @@
 package dev.kobento.showcases
 
+import android.annotation.SuppressLint
+import android.content.Context
+import android.view.WindowManager
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -43,6 +49,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.remote.player.view.RemoteComposePlayer
+import kotlin.math.ceil
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,14 +80,10 @@ fun PlayerScreen(showcase: Showcase, onBack: () -> Unit) {
         },
     ) { insets ->
         Column(Modifier.fillMaxSize().padding(insets)) {
-            AnimatedVisibility(info) {
-                Text(
-                    showcase.summary,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                )
-            }
+            val context = LocalContext.current
+            // The look being played: its own file (the mono looks are separate documents).
+            val bytes = remember(showcase.folder, look) { context.assets.open(showcase.asset(look.file)).use { it.readBytes() } }
+            AnimatedVisibility(info) { Details(showcase, bytes.size) }
             Row(
                 Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -93,7 +96,7 @@ fun PlayerScreen(showcase: Showcase, onBack: () -> Unit) {
             } else {
                 DocumentFrame(showcase, Modifier.weight(1f).fillMaxWidth()) {
                     // A new player per look: each look is its own document (or the same one in another theme).
-                    key(look) { Player(showcase, look) }
+                    key(look) { Player(bytes, look) }
                 }
             }
         }
@@ -125,10 +128,72 @@ private fun DocumentFrame(showcase: Showcase, modifier: Modifier, content: @Comp
     }
 }
 
+/** Size and shape of the document, what it shows off, then what it is. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Player(showcase: Showcase, look: Look) {
-    val context = LocalContext.current
-    val bytes = remember(showcase.folder, look) { context.assets.open(showcase.asset(look.file)).use { it.readBytes() } }
+private fun Details(showcase: Showcase, bytes: Int) {
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Fact("Size", formatBytes(bytes))
+            if (showcase.opCount > 0) Fact("Operations", "%,d".format(showcase.opCount))
+            if (showcase.designWidth > 0) Fact("Designed at", "${showcase.designWidth} × ${showcase.designHeight} dp")
+            Fact("Form", FORMS[showcase.formFactor] ?: showcase.formFactor)
+            showcase.repaint?.let { Fact("Repaints", REPAINTS[it] ?: it) }
+        }
+        if (showcase.capabilities.isNotEmpty()) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                for (c in showcase.capabilities) {
+                    Text(c, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(6.dp))
+                            .padding(horizontal = 8.dp, vertical = 3.dp))
+                }
+            }
+        }
+        Text(showcase.summary, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun Fact(label: String, value: String) {
+    Column {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.titleSmall)
+    }
+}
+
+private val FORMS = mapOf("phone" to "Phone", "tablet" to "Tablet", "square" to "Square",
+    "watch-round" to "Round watch", "widget-4x1" to "4×1 widget")
+private val REPAINTS = mapOf("continuous" to "Every frame", "scheduled" to "On a schedule", "idle" to "When something changes")
+
+/**
+ * No frame budget: the player's defaults (Limits: 60 fps at most, 10 fps on average over a 10 s
+ * window) keep a launcher's widgets light, and slow a demo to a crawl. setDocument resets the
+ * limiter to those defaults and a document's own fps request is capped at Limits.MAX_FPS, so all
+ * three are raised to the display's refresh rate before the document is set; the average limit
+ * equal to the maximum never throttles.
+ *
+ * After setDocument (which turns it back on), setUseChoreographer(false): with the choreographer
+ * a frame that wants the next one posts a frame callback, which then posts an invalidate on the
+ * following vsync, so each frame takes two vsyncs (30 fps at 60 Hz). Without it the view
+ * invalidates at once and draws on the next vsync; a document that waits (a clock's next minute)
+ * still gets a delayed invalidate.
+ */
+private fun RemoteComposePlayer.fullSpeed(context: Context) {
+    val fps = maxOf(60, ceil(displayRefreshRate(context)).toInt())
+    setMaxFps(fps)
+    setDefaultMaxFps(fps)
+    setDefaultMaxAvgFps(fps)
+}
+
+@Suppress("DEPRECATION")   // Context.getDisplay needs API 30; the app runs from 26
+private fun displayRefreshRate(context: Context): Float =
+    (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.refreshRate
+
+private fun formatBytes(n: Int) = if (n < 1024) "$n B" else "%.1f KB".format(n / 1024.0)
+
+@SuppressLint("VisibleForTests")   // setUseChoreographer is marked for tests: see fullSpeed
+@Composable
+private fun Player(bytes: ByteArray, look: Look) {
     val theme = when (look) {
         Look.Auto -> if (isSystemInDarkTheme()) RemoteComposePlayer.THEME_DARK else RemoteComposePlayer.THEME_LIGHT
         Look.Light, Look.MonoLight -> RemoteComposePlayer.THEME_LIGHT
@@ -136,7 +201,7 @@ private fun Player(showcase: Showcase, look: Look) {
     }
     AndroidView(
         modifier = Modifier.fillMaxSize(),
-        factory = { DpHost(it, RemoteComposePlayer(it).apply { setTheme(theme); setDocument(bytes) }) },
+        factory = { DpHost(it, RemoteComposePlayer(it).apply { fullSpeed(it); setTheme(theme); setDocument(bytes); setUseChoreographer(false) }) },
         // Auto follows the system: the theme changes in place, the document keeps its state.
         update = { (it.child as RemoteComposePlayer).setTheme(theme) },
     )

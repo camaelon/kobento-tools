@@ -4,15 +4,18 @@ plugins {
 }
 
 // The showcases come from kobento-mcp's example catalog: examples/SHW-*/ (doc.rc and its mono
-// looks, the light and dark renders as thumbnails, meta.json). A sibling checkout, or KOBENTO_MCP.
+// looks, the light and dark renders as thumbnails, meta.json), and docs/examples-vocabulary.json
+// for the capability labels. A sibling checkout, or KOBENTO_MCP.
 val kobentoMcp: File = (System.getenv("KOBENTO_MCP") ?: providers.gradleProperty("kobentoMcp").orNull)
     ?.let { file(it) } ?: rootDir.resolve("../../kobento-mcp")
 val examplesDir = kobentoMcp.resolve("examples")
+val vocabularyFile = kobentoMcp.resolve("docs/examples-vocabulary.json")
 
-/** Copies the SHW showcases from kobento-mcp/examples into generated assets (showcases/<folder>/). */
+/** Copies the SHW showcases from kobento-mcp/examples into generated assets (showcases/<folder>/), and the vocabulary. */
 abstract class SyncShowcases : DefaultTask() {
     @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val examples: ConfigurableFileCollection
     @get:Internal abstract val examplesRoot: DirectoryProperty
+    @get:InputFile @get:PathSensitive(PathSensitivity.NONE) abstract val vocabulary: RegularFileProperty
     @get:OutputDirectory abstract val output: DirectoryProperty
     @get:Inject abstract val fs: FileSystemOperations
 
@@ -22,8 +25,9 @@ abstract class SyncShowcases : DefaultTask() {
             throw GradleException("No showcases at $root: check out kobento-mcp next to kobento-tools, or set KOBENTO_MCP.")
         }
         fs.sync {
-            from(root) { include(SHOWCASE_FILES) }
-            into(output.dir("showcases"))
+            from(root) { include(SHOWCASE_FILES); into("showcases") }
+            from(vocabulary)
+            into(output)
         }
     }
 
@@ -36,6 +40,7 @@ abstract class SyncShowcases : DefaultTask() {
 val syncShowcases by tasks.registering(SyncShowcases::class) {
     description = "Copies the SHW showcases from kobento-mcp/examples into the app's assets."
     examplesRoot.set(examplesDir)
+    vocabulary.set(vocabularyFile)
     examples.from(fileTree(examplesDir) { include(SyncShowcases.SHOWCASE_FILES) })
 }
 

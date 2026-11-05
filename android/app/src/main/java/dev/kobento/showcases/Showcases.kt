@@ -23,6 +23,14 @@ data class Showcase(
      * (DRAW_MESH_3D, SET_CAMERA_3D, ...), operations only Kobento's players implement.
      */
     val unsupported: String?,
+    /** The document as the catalog built it: operations, the size it is designed at (dp). */
+    val opCount: Int,
+    val designWidth: Int,
+    val designHeight: Int,
+    /** How often it repaints: continuous, scheduled or idle (only when something changes). */
+    val repaint: String?,
+    /** What it shows off, as the catalog's labels ("Particles", "Drag"). */
+    val capabilities: List<String>,
 ) {
     fun asset(file: String) = "showcases/$folder/$file"
 }
@@ -38,11 +46,14 @@ enum class Look(val label: String, val file: String) {
 
 /** The showcases in assets, by id (SHW-04, SHW-10, ...). */
 fun loadShowcases(assets: AssetManager): List<Showcase> {
+    val labels = capabilityLabels(assets)
     val folders = assets.list("showcases").orEmpty().filter { it.startsWith("SHW-") }
     return folders.mapNotNull { folder ->
         val files = assets.list("showcases/$folder").orEmpty().toSet()
         if ("doc.rc" !in files || "meta.json" !in files) return@mapNotNull null
         val meta = JSONObject(assets.open("showcases/$folder/meta.json").bufferedReader().use { it.readText() })
+        val derived = meta.optJSONObject("derived")
+        val header = derived?.optJSONObject("header")
         val title = meta.optString("title", folder)
         val colon = title.indexOf(": ")
         Showcase(
@@ -59,6 +70,20 @@ fun loadShowcases(assets: AssetManager): List<Showcase> {
             unsupported = meta.optJSONObject("derived")?.optJSONObject("operations")?.keys()?.asSequence()
                 ?.filter { "_3D" in it }?.toList()?.takeIf { it.isNotEmpty() }
                 ?.let { "It draws with Kobento's 3D extension (${it.sorted().joinToString(", ")}), which the androidx player does not implement." },
+            opCount = derived?.optInt("op_count") ?: 0,
+            designWidth = header?.optInt("width") ?: 0,
+            designHeight = header?.optInt("height") ?: 0,
+            repaint = derived?.optString("repaint")?.ifBlank { null },
+            capabilities = meta.optJSONObject("capabilities")?.optJSONArray("primary")
+                ?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty()
+                .map { labels[it] ?: it },
         )
     }.sortedBy { it.id.substringAfter('-').toIntOrNull() ?: Int.MAX_VALUE }
 }
+
+/** The catalog's capability labels ("fx.particles" -> "Particles"), from examples-vocabulary.json. */
+private fun capabilityLabels(assets: AssetManager): Map<String, String> = runCatching {
+    val caps = JSONObject(assets.open("examples-vocabulary.json").bufferedReader().use { it.readText() })
+        .getJSONObject("capabilities")
+    caps.keys().asSequence().associateWith { caps.getJSONObject(it).optString("label", it) }
+}.getOrDefault(emptyMap())
