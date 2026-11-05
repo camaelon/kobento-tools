@@ -1,0 +1,62 @@
+# Kobento showcases for Android
+
+An Android app that plays the Kobento showcases (`SHW-*` in kobento-mcp's example catalog) with the
+androidx RemoteCompose player, `androidx.compose.remote:remote-player-view`.
+
+- A gallery of the showcases with their renders.
+- A player screen for each one: the document fills the screen and is laid out again on rotation or
+  resize. A watch face, a square document or a 4×1 widget is shown at its own shape.
+- Looks: Auto (follows the system's light or dark), Light, Dark, and the mono light and mono dark
+  documents.
+
+## Build
+
+The showcases are copied from a kobento-mcp checkout next to kobento-tools, or the one `KOBENTO_MCP`
+names. Builds need JDK 17+ and the Android SDK (`ANDROID_HOME`, or `sdk.dir` in `local.properties`).
+
+```sh
+git clone https://github.com/camaelon/kobento-mcp ../../kobento-mcp   # if not there already
+./gradlew installDebug          # build and install on a connected device or emulator
+./gradlew assembleRelease       # app/build/outputs/apk/release/ (signed with the debug key)
+```
+
+To open one showcase directly:
+`adb shell am start -n dev.kobento.showcases/.MainActivity --es showcase SHW-23`
+
+## Which player
+
+The app uses androidx-main's player: `1.0.0-SNAPSHOT`, from the androidx.dev build that
+`gradle.properties` pins (`androidxSnapshotBuild`). To move to a newer one, set that property to the
+id of https://androidx.dev/snapshots/latest. To use a release from Google Maven instead, pass its
+version: `./gradlew -PremoteVersion=1.0.0-alpha23 installDebug`.
+
+The player's API is `@RestrictTo(LIBRARY_GROUP)` in the alphas, so the `RestrictedApi` lint check is
+off.
+
+## Density
+
+The showcases have no density header: `densityBehavior` needs API level 8, and they are level 7.
+The androidx player lays out a document like that in pixels. The showcases are written in dp, and
+the web and C++ players read them that way. `DpHost` therefore gives the player the screen's size in
+dp and scales the view up by the display density. Drawing stays sharp, and touches are mapped back
+into the document's coordinates.
+
+## What plays
+
+As of androidx.dev build 16844723 (2026-11-05):
+
+| | Showcases |
+| :--- | :--- |
+| Play | SHW-04, 10, 12, 21, 22, 29, 31, 32 |
+| Play until a day is picked, then throw | SHW-24, SHW-30: an animated `FloatExpression` is evaluated without arrays (`FloatExpression.updateVariables`) |
+| Play, but take no drag | SHW-28: an action setting a variable to `touchX()` is dropped (`CoreDocument.evaluateFloatExpression`) |
+| The player throws | SHW-23 (`ParticlesCompare.condition1Body`: a null array), SHW-25 (`PathGenerator`: path buffers sized `n * 10`), SHW-26 and SHW-27 (a computed NaN taken for an operator in `AnimatedFloatExpression.opEval`: index −1) |
+| Kobento's 3D extension, not in androidx | SHW-15, 16, 17, 18, 19, 20: shown as "Not playable here" (Play anyway tries) |
+
+These are bugs in the player: SHW-23 to SHW-28 are byte-identical to the output of androidx's own
+JSON parser. kobento-mcp's `docs/EXAMPLES_FINDINGS.md` records each one (U60 to U64) with its fix;
+with those five fixes applied to remote-core, every showcase above plays.
+
+The particle showcases (SHW-10, 12, 23) create their particle systems inside an `impulse`: the
+androidx player re-creates the particles every time `createParticles` paints, so as a plain
+command they would be reset every frame (U59).

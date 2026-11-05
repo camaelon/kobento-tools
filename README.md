@@ -18,6 +18,7 @@ kobento-tools/
 │                 layout specs, 3D / vector / determinism parity scripts
 ├── 3d-oracle/    the Java oracle for the 3D renderer's bit-exact parity
 ├── inspector/    the RemoteCompose inspector (web), built on the TypeScript player
+├── android/      an Android app playing the showcases with the androidx player (Gradle; see android/README.md)
 └── creation/     a TypeScript document-creation experiment (flappy)
 ```
 
@@ -30,7 +31,7 @@ Tools that need an engine use the other Kobento repositories, checked out next t
 | `../kobento-libs` (`-DKOBENTO_LIBS_DIR`) | the C++ tools (`cpp/`), the parity scripts |
 | `../kobento-ts` (`KOBENTO_TS`) | the inspector, the TypeScript renders in the converters' validation, conformance |
 | `../kobento-ios` (`-DKOBENTO_IOS_DIR`, optional) | `rc2image-native` |
-| `../kobento-mcp` (`KOBENTO_MCP`) | `avd/convert_icons.py` reads and writes its `assets/icons` |
+| `../kobento-mcp` (`KOBENTO_MCP`) | `avd/convert_icons.py` reads and writes its `assets/icons`; `android/` embeds its showcases |
 
 ```sh
 cmake -S cpp -B cpp/build && cmake --build cpp/build -j

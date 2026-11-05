@@ -16,3 +16,10 @@ node_modules/
 __pycache__/
 out/
 .DS_Store
+
+# Android app (android/): Gradle and build output, the local SDK path
+android/.gradle/
+android/.kotlin/
+android/build/
+android/app/build/
+android/local.properties

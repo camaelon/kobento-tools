@@ -1,0 +1,32 @@
+name: Android showcases app
+
+on:
+  push:
+    paths: [".github/workflows/android.yml", "android/**"]
+  pull_request:
+    paths: [".github/workflows/android.yml", "android/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: kobento-tools }
+      # The showcases the app embeds: kobento-mcp/examples/SHW-*.
+      - uses: actions/checkout@v4
+        with: { repository: camaelon/kobento-mcp, path: kobento-mcp, sparse-checkout: examples }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+      - uses: android-actions/setup-android@v3
+      - name: Build the APK
+        working-directory: kobento-tools/android
+        run: ./gradlew --no-daemon assembleDebug lintDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kobento-showcases-debug
+          path: kobento-tools/android/app/build/outputs/apk/debug/app-debug.apk
