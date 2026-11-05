@@ -320,7 +320,7 @@ RemoteCompose versions of the icon sets in [`../source/`](../SOURCES.md).
 | `material-symbols/` | Material Symbols, Android vector drawables, 24 px ([SOURCES.md](../SOURCES.md)) | {icons:,} | {n:,} | {src:,} B | {js:,} B | {rc:,} B |
 
 Each `<name>/materialsymbols<style>/<name>[_fill1]_24px.xml` was converted by
-`avd/avd2rc.py` (regenerate with `python3 avd/convert_icons.py`; it is incremental) into
+`avd/avd2rc.py` (regenerate with `python3 ../kobento-tools/avd/convert_icons.py`; it is incremental) into
 `<same path>.json` (RemoteCompose JSON, what json2rc and the Java parser read) and `.rc`
 (the document, via json2rc). `material-symbols/catalog.json` lists every icon (styles, filled
 variants, categories, tags, popularity, files and `.rc` sizes); icons Google's metadata does not
@@ -338,6 +338,13 @@ the icon by replacing it.
 These files are derived works of Material Symbols by Google: they were modified (converted to
 RemoteCompose) by avd2rc and remain under the Apache License 2.0 —
 [`LICENSE`](LICENSE) (also in `material-symbols/`). The license grants no trademark rights.
+
+## In git
+
+Only `catalog.json`, this README, `LICENSE` and the gallery page (`index.html`) are
+committed. The per-icon `.json`/`.rc` files and the gallery's data chunks (`gallery/`) are
+regenerated from `../source/` with `python3 ../kobento-tools/avd/convert_icons.py` (incremental, about 10 s from
+scratch); `mcp/deploy/setup.sh` runs it on every deploy.
 '''.format(icons=cat['count'], n=n, src=src_bytes, js=js, rc=rc, tint=TINT)
     (OUT_TOP / 'README.md').write_text(text)
     return src_bytes, js, rc, n

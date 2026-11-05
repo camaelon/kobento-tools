@@ -53,6 +53,19 @@ commands, the matrix stack, `loop`, `conditionalOperations`, paths (`drawPath` f
 deferred materialisation, and the full expression compiler — operators, 43 functions, 107 system
 variables, `componentWidth()`/`componentHeight()`.
 
+A particle system belongs in an `impulse`: the androidx player re-creates the particles every time
+`createParticles` paints, so as a plain canvas command they are reset every frame. The impulse runs
+its commands once when its window opens and its `impulseProcess` every frame after:
+
+```json
+{"impulse": {"duration": 1000000000, "start": 0, "commands": [
+  {"createParticles": {"id": "p", "count": 40, "variables": ["x", "y"], "initialValues": ["rand() * 400", "0"]}},
+  {"impulseProcess": {"commands": [
+    {"particlesLoop": {"system": "@p", "equations": ["x", "y + 2"], "commands": [{"drawCircle": {"cx": "x", "cy": "y", "radius": 3}}]}}
+  ]}}
+]}}
+```
+
 ## Bitmaps
 
 `resources.bitmaps` declares named images. Canvas commands draw them (`drawBitmap`, `drawBitmapInt`, `drawScaledBitmap`, `image` is `@name` or a numeric id), and `texture3D` and shader inputs reference them by name. The Java parser has the three draw commands but no `resources.bitmaps`: its images come from the host (`defineBitmap`), so byte equality can only be checked with a numeric id. `drawBitmap` needs `right` and `bottom` here: the reference asks the platform for the image's size, and there is none. Whatever
