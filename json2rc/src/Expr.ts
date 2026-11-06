@@ -30,6 +30,18 @@ export function checkExpressionSize(ops: number[], source?: string): void {
         ` — split it into named variables` + (source !== undefined ? `: ${source}` : ""));
 }
 
+/** The same refusal for the other expressions Android reads with a length cap: a path
+ *  expression's x and y and a particle system's equations (32 entries: Limits.MAX_EXPRESSION_SIZE,
+ *  ParticlesCreate.MAX_EQU_LENGTH), and a particlesComparison's condition and equations (46:
+ *  ParticlesCompare.MAX_EQU_LENGTH). The Java parser writes them, and the player then refuses to
+ *  load the whole document ("34 map entries more than max = 32"), so say it here instead. */
+export function checkEquationSize(ops: number[], what: string, source?: string, max = MAX_EXPRESSION_SIZE): void {
+    if (ops.length <= max) return;
+    throw new ExpressionError(
+        `${what} has ${ops.length} entries; Android accepts at most ${max} and refuses to load the document` +
+        ` — split it into named variables` + (source !== undefined ? `: ${source}` : ""));
+}
+
 const OFFSET = 3211264;
 const RAND_SEED_OP = 40;
 const OPERATORS: Record<string, number> = { "+": 1, "-": 2, "*": 3, "/": 4, "%": 5, "u-": 73 };

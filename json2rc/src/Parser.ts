@@ -11,7 +11,7 @@ import { Writer, Emit, hostAction, TYPE_EXACT, TYPE_FILL, modBorder, modGraphics
     from "./Writer";
 import { floatToRawIntBits, idFromNanBits, asNanBits, f32FromBits } from "./WireBuffer";
 import { HEADER_KEY_TO_TAG, Tag } from "./Header";
-import { ExpressionParser, checkExpressionSize } from "./Expr";
+import { ExpressionParser, checkEquationSize, checkExpressionSize } from "./Expr";
 
 export class NotImplementedComponent extends Error {
     // An empty `extends Error` inherits `name` from Error.prototype, so `e.name` reads
@@ -2298,6 +2298,8 @@ export class Parser {
             // produce bytes no reference run could be compared against.
             const xOps = this.expr.infixToRpn(String(command.expressionX));
             const yOps = this.expr.infixToRpn(String(command.expressionY));
+            checkEquationSize(xOps, "pathExpression expressionX", String(command.expressionX));
+            checkEquationSize(yOps, "pathExpression expressionY", String(command.expressionY));
             const pid = w.pathExpression(
                 Number(command.flags ?? 0), f("start"), f("end"), f("count"), xOps, yOps);
             if (command.id !== undefined && command.id !== null) {
@@ -2315,7 +2317,11 @@ export class Parser {
             // id and the variable names become ordinary float variables afterwards, which is
             // how the loop body and any drawing command refer to them.
             const names = (command.variables as J[]).map(String);
-            const inits = (command.initialValues as J[]).map((v) => this.expr.infixToRpn(String(v)));
+            const inits = (command.initialValues as J[]).map((v, i) => {
+                const ops = this.expr.infixToRpn(String(v));
+                checkEquationSize(ops, `createParticles initialValues[${i}]`, String(v));
+                return ops;
+            });
             if (inits.length !== names.length) {
                 throw new NotImplementedComponent(
                     `createParticles: ${names.length} variables but ${inits.length} initialValues`);
@@ -2332,7 +2338,12 @@ export class Parser {
             const systemBits = f("system");
             const restart = "restart" in command
                 ? this.expr.infixToRpn(String(command.restart)) : null;
-            const eqs = (command.equations as J[]).map((e) => this.expr.infixToRpn(String(e)));
+            if (restart) checkEquationSize(restart, "particlesLoop restart", String(command.restart));
+            const eqs = (command.equations as J[]).map((e, i) => {
+                const ops = this.expr.infixToRpn(String(e));
+                checkEquationSize(ops, `particlesLoop equations[${i}]`, String(e));
+                return ops;
+            });
             w.particlesLoopStart(systemBits & 0x007fffff, restart, eqs);
             for (const c of command.commands ?? []) this.parseCommand(c);
             w.containerEnd();
@@ -2342,10 +2353,15 @@ export class Parser {
             const eqs = (key: string): number[][] | null => {
                 const raw = command[key] as J[] | undefined;
                 return raw !== undefined && raw !== null
-                    ? raw.map((e) => this.expr.infixToRpn(String(e))) : null;
+                    ? raw.map((e, i) => {
+                        const ops = this.expr.infixToRpn(String(e));
+                        checkEquationSize(ops, `particlesComparison ${key}[${i}]`, String(e), 46);
+                        return ops;
+                    }) : null;
             };
             const cond = "condition" in command
                 ? this.expr.infixToRpn(String(command.condition)) : null;
+            if (cond) checkEquationSize(cond, "particlesComparison condition", String(command.condition), 46);
             // `then2` falls back to `then`, matching the reference's spelling of the same
             // field; `then1` has no such alias.
             const then2 = "then2" in command ? eqs("then2") : eqs("then");

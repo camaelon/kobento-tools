@@ -2508,6 +2508,8 @@ class Parser {
             // produce bytes no reference run could be compared against.
             const xOps = this.expr.infixToRpn(String(command.expressionX));
             const yOps = this.expr.infixToRpn(String(command.expressionY));
+            (0, Expr_1.checkEquationSize)(xOps, "pathExpression expressionX", String(command.expressionX));
+            (0, Expr_1.checkEquationSize)(yOps, "pathExpression expressionY", String(command.expressionY));
             const pid = w.pathExpression(Number(command.flags ?? 0), f("start"), f("end"), f("count"), xOps, yOps);
             if (command.id !== undefined && command.id !== null) {
                 this.paths.set(String(command.id), pid);
@@ -2528,7 +2530,11 @@ class Parser {
             // id and the variable names become ordinary float variables afterwards, which is
             // how the loop body and any drawing command refer to them.
             const names = command.variables.map(String);
-            const inits = command.initialValues.map((v) => this.expr.infixToRpn(String(v)));
+            const inits = command.initialValues.map((v, i) => {
+                const ops = this.expr.infixToRpn(String(v));
+                (0, Expr_1.checkEquationSize)(ops, `createParticles initialValues[${i}]`, String(v));
+                return ops;
+            });
             if (inits.length !== names.length) {
                 throw new NotImplementedComponent(`createParticles: ${names.length} variables but ${inits.length} initialValues`);
             }
@@ -2544,7 +2550,13 @@ class Parser {
             const systemBits = f("system");
             const restart = "restart" in command
                 ? this.expr.infixToRpn(String(command.restart)) : null;
-            const eqs = command.equations.map((e) => this.expr.infixToRpn(String(e)));
+            if (restart)
+                (0, Expr_1.checkEquationSize)(restart, "particlesLoop restart", String(command.restart));
+            const eqs = command.equations.map((e, i) => {
+                const ops = this.expr.infixToRpn(String(e));
+                (0, Expr_1.checkEquationSize)(ops, `particlesLoop equations[${i}]`, String(e));
+                return ops;
+            });
             w.particlesLoopStart(systemBits & 0x007fffff, restart, eqs);
             for (const c of command.commands ?? [])
                 this.parseCommand(c);
@@ -2555,10 +2567,16 @@ class Parser {
             const eqs = (key) => {
                 const raw = command[key];
                 return raw !== undefined && raw !== null
-                    ? raw.map((e) => this.expr.infixToRpn(String(e))) : null;
+                    ? raw.map((e, i) => {
+                        const ops = this.expr.infixToRpn(String(e));
+                        (0, Expr_1.checkEquationSize)(ops, `particlesComparison ${key}[${i}]`, String(e), 46);
+                        return ops;
+                    }) : null;
             };
             const cond = "condition" in command
                 ? this.expr.infixToRpn(String(command.condition)) : null;
+            if (cond)
+                (0, Expr_1.checkEquationSize)(cond, "particlesComparison condition", String(command.condition), 46);
             // `then2` falls back to `then`, matching the reference's spelling of the same
             // field; `then1` has no such alias.
             const then2 = "then2" in command ? eqs("then2") : eqs("then");

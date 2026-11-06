@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExpressionParser = exports.MAX_EXPRESSION_SIZE = exports.ExpressionError = void 0;
 exports.checkExpressionSize = checkExpressionSize;
+exports.checkEquationSize = checkEquationSize;
 exports.isVariableRef = isVariableRef;
 exports.variableNameFromRef = variableNameFromRef;
 /**
@@ -32,6 +33,17 @@ function checkExpressionSize(ops, source) {
     if (ops.length <= exports.MAX_EXPRESSION_SIZE)
         return;
     throw new ExpressionError(`float expression has ${ops.length} entries; Android accepts at most ${exports.MAX_EXPRESSION_SIZE}` +
+        ` — split it into named variables` + (source !== undefined ? `: ${source}` : ""));
+}
+/** The same refusal for the other expressions Android reads with a length cap: a path
+ *  expression's x and y and a particle system's equations (32 entries: Limits.MAX_EXPRESSION_SIZE,
+ *  ParticlesCreate.MAX_EQU_LENGTH), and a particlesComparison's condition and equations (46:
+ *  ParticlesCompare.MAX_EQU_LENGTH). The Java parser writes them, and the player then refuses to
+ *  load the whole document ("34 map entries more than max = 32"), so say it here instead. */
+function checkEquationSize(ops, what, source, max = exports.MAX_EXPRESSION_SIZE) {
+    if (ops.length <= max)
+        return;
+    throw new ExpressionError(`${what} has ${ops.length} entries; Android accepts at most ${max} and refuses to load the document` +
         ` — split it into named variables` + (source !== undefined ? `: ${source}` : ""));
 }
 const OFFSET = 3211264;
