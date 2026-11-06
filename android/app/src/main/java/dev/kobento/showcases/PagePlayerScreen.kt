@@ -42,10 +42,10 @@ import androidx.core.net.toUri
 
 private val PAGE_LOOKS = listOf(Look.Auto, Look.Light, Look.Dark)
 
-/** One of the account's published pages: its document downloaded and played like a showcase. */
+/** A published page (the account's own, or one from the stream): its document downloaded and played like a showcase. */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun PagePlayerScreen(page: PublishedPage, onBack: () -> Unit) {
+fun PagePlayerScreen(page: PublishedPage, subtitle: String, onBack: () -> Unit) {
     var look by rememberSaveable(page.id) { mutableStateOf(Look.Auto) }
     var info by rememberSaveable(page.id) { mutableStateOf(false) }
     var attempt by rememberSaveable(page.id) { mutableIntStateOf(0) }
@@ -58,7 +58,7 @@ fun PagePlayerScreen(page: PublishedPage, onBack: () -> Unit) {
                 title = {
                     Column {
                         Text(page.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text("Your page", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(subtitle, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(painterResource(R.drawable.ic_arrow_back), contentDescription = "Back") } },

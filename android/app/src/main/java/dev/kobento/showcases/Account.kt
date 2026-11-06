@@ -117,6 +117,56 @@ class Account(context: Context) {
         })
     }
 
+    /**
+     * The public stream (the examples site's stream/items.json, under /examples): sorted "new" or "top", only [tag]'s
+     * items, matching [query]'s words. Signed in, each item carries this account's vote.
+     */
+    suspend fun stream(sort: String, tag: String?, query: String): StreamPage {
+        val qs = buildString {
+            append("?sort=").append(sort)
+            tag?.let { append("&tag=").append(enc(it)) }
+            query.trim().takeIf { it.isNotEmpty() }?.let { append("&q=").append(enc(it)) }
+        }
+        val url = "$server/examples/stream/items.json$qs"
+        val text = if (email == null) get(url) else try { authorizedGet(url) } catch (_: SignedOut) { get(url) }
+        val body = JSONObject(text)
+        val items = body.getJSONArray("items")
+        val tags = body.optJSONArray("tags")
+        return StreamPage(
+            items = (0 until items.length()).map { i ->
+                val it = items.getJSONObject(i)
+                val doc = it.optJSONObject("document")
+                StreamItem(
+                    pageId = it.getString("page_id"), title = it.optString("title").ifBlank { "Untitled" },
+                    author = it.optString("author"), tags = it.optJSONArray("tags").strings(),
+                    score = it.optInt("score"), ups = it.optInt("ups"), downs = it.optInt("downs"),
+                    myVote = if (it.isNull("my_vote")) null else it.optInt("my_vote"), showcase = it.optBoolean("showcase"),
+                    page = PublishedPage(
+                        id = it.getString("page_id"), title = it.optString("title").ifBlank { "Untitled" }, url = it.getString("url"),
+                        rcUrl = it.getString("rc_url"), previewUrl = it.optString("preview_url").takeIf { u -> u.isNotBlank() && u != "null" },
+                        created = it.optString("created"), rcBytes = it.optInt("rc_bytes"),
+                        width = doc?.optInt("width") ?: 0, height = doc?.optInt("height") ?: 0,
+                    ),
+                )
+            },
+            tags = tags?.let { a -> (0 until a.length()).map { a.getJSONObject(it).getString("tag") } }.orEmpty(),
+        )
+    }
+
+    /** Votes on a stream item: 1, -1, or 0 to take the vote back. Returns the item's new tally. */
+    suspend fun vote(pageId: String, value: Int): Vote {
+        val url = "$server/examples/stream/$pageId/vote"
+        val body = "value=$value"
+        val text = try {
+            request("POST", url, body, "application/x-www-form-urlencoded", accessToken())
+        } catch (e: HttpError) {
+            if (e.status != 401) throw e
+            request("POST", url, body, "application/x-www-form-urlencoded", accessToken(forceRefresh = true))
+        }
+        val j = JSONObject(text)
+        return Vote(j.optInt("score"), j.optInt("ups"), j.optInt("downs"), j.optInt("my_vote"))
+    }
+
     /** Signs out: the server forgets the grant (revoking the refresh token), the app its tokens. */
     suspend fun signOut() {
         val refresh = prefs.getString(K_REFRESH, null)
@@ -231,6 +281,7 @@ class Account(context: Context) {
         private const val K_VERIFIER = "verifier"
         private const val K_STATE = "state"
 
+        private fun org.json.JSONArray?.strings() = this?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty()
         private fun enc(s: String) = URLEncoder.encode(s, "UTF-8")
         private fun b64(b: ByteArray) = Base64.encodeToString(b, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
         private fun random(n: Int) = b64(ByteArray(n).also { SecureRandom().nextBytes(it) })
@@ -252,6 +303,27 @@ data class PublishedPage(
     val width: Int,
     val height: Int,
 )
+
+/** What stream/items.json returns: the items, and the tags in use (the most used first). */
+data class StreamPage(val items: List<StreamItem>, val tags: List<String>)
+
+/** One item of the stream: its name, poster and votes, and the published page it plays. */
+data class StreamItem(
+    val pageId: String,
+    val title: String,
+    val author: String,
+    val tags: List<String>,
+    val score: Int,
+    val ups: Int,
+    val downs: Int,
+    /** This account's vote (1, -1, 0), or null signed out. */
+    val myVote: Int?,
+    val showcase: Boolean,
+    val page: PublishedPage,
+)
+
+/** An item's tally after a vote. */
+data class Vote(val score: Int, val ups: Int, val downs: Int, val myVote: Int)
 
 /** Downloads a public file (a page's .rc or preview). */
 suspend fun download(url: String): ByteArray = withContext(Dispatchers.IO) {

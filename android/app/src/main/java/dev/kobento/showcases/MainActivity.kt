@@ -65,7 +65,10 @@ private fun App(start: String?, account: Account, redirect: MutableState<Uri?>) 
     val scope = rememberCoroutineScope()
     val showcases = remember { loadShowcases(context.assets) }
     var openId by rememberSaveable { mutableStateOf(start) }
-    var openPageId by rememberSaveable { mutableStateOf<String?>(null) }
+    // A published page playing (the account's, or a stream item's), with the line under its title.
+    var openPage by remember { mutableStateOf<Pair<PublishedPage, String>?>(null) }
+    val stream = remember { StreamState() }
+    var tab by rememberSaveable { mutableStateOf(GalleryTab.Showcases) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var pages by remember { mutableStateOf<List<PublishedPage>?>(null) }
@@ -91,12 +94,12 @@ private fun App(start: String?, account: Account, redirect: MutableState<Uri?>) 
     // Signed in from before: list the pages once.
     LaunchedEffect(account.email) { if (account.email != null && pages == null && answer == null) refresh() }
 
-    val openPage = pages?.firstOrNull { it.id == openPageId }
     val open = showcases.firstOrNull { it.id == openId }
+    val playing = openPage
     when {
-        openPage != null -> {
-            BackHandler { openPageId = null }
-            PagePlayerScreen(openPage, onBack = { openPageId = null })
+        playing != null -> {
+            BackHandler { openPage = null }
+            PagePlayerScreen(playing.first, playing.second, onBack = { openPage = null })
         }
         open != null -> {
             BackHandler { openId = null }
@@ -109,8 +112,17 @@ private fun App(start: String?, account: Account, redirect: MutableState<Uri?>) 
                 onSignIn = { run { account.startSignIn(context) } },
                 onSignOut = { run { account.signOut(); pages = null } },
                 onRefresh = refresh,
-                onOpenPage = { openPageId = it.id },
+                onOpenPage = { openPage = it to "Your page" },
             ),
+            StreamUi(
+                state = stream, signedInAs = account.email,
+                load = { sort, tag, q -> account.stream(sort, tag, q) },
+                vote = { id, v -> account.vote(id, v) },
+                onSignIn = { run { account.startSignIn(context) } },
+                onOpen = { openPage = it.page to "by ${it.author}" },
+            ),
+            tab = tab,
+            onTab = { tab = it },
             onOpen = { openId = it.id },
         )
     }

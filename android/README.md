@@ -3,12 +3,16 @@
 An Android app that plays the Kobento showcases (`SHW-*` in kobento-mcp's example catalog) with the
 androidx RemoteCompose player, `androidx.compose.remote:remote-player-view`.
 
-- A gallery of the showcases with their renders.
+Three tabs:
+
+- **Showcases**: a gallery of the showcases with their renders.
 - A player screen for each one: the document fills the screen and is laid out again on rotation or
   resize. A watch face, a square document or a 4×1 widget is shown at its own shape.
 - Looks: Auto (follows the system's light or dark), Light, Dark, and the mono light and mono dark
   documents.
-- Sign in to a Kobento account to play the pages you published too.
+- **Stream**: the documents people shared on mcp.kobento.dev, newest or top first, filtered by
+  tag or searched (titles, people, tags). Tap one to play it; signed in, vote it up or down.
+- **Your pages**: sign in to a Kobento account to play the pages you published.
 
 ## Build
 
@@ -26,18 +30,20 @@ To open one showcase directly:
 
 ## Sign in
 
-**Sign in** at the top of the gallery opens mcp.kobento.dev's own sign-in page in a Custom Tab.
+**Sign in** on the Your pages tab (or a vote on the Stream tab) opens mcp.kobento.dev's own sign-in page in a Custom Tab.
 Someone already signed in on the website in that browser only sees the "Allow" page; otherwise
-they sign in once (an emailed link, an account token, or a new account). The gallery then gets
-a **Your pages** section: the pages the account published with Kobento's MCP tools, each
-played like a showcase (its `.rc`, from the page's public link).
+they sign in once (an emailed link, an account token, or a new account). Your pages then lists
+the pages the account published with Kobento's MCP tools, each played like a showcase (its
+`.rc`, from the page's public link).
 
 The app is an OAuth 2.1 public client of the server (RFC 8252, `Account.kt`): it registers
 itself the first time (dynamic client registration), signs in with PKCE, and gets the answer
 back on its own scheme, `dev.kobento.showcases:/oauth`. It keeps the access token (1 h) and the
 refresh token (30 days, rotated on each use) in its private preferences. **Sign out** revokes the
 grant on the server. You can also disconnect the app under Connected apps on the account page.
-The list comes from `GET <server>/deploy/pages.json` with the access token.
+Your pages come from `GET <server>/deploy/pages.json` with the access token; the stream from
+`GET <server>/examples/stream/items.json` (public; with the token it adds your votes), and a
+vote is `POST <server>/examples/stream/<page id>/vote` with the token.
 
 The server is `https://mcp.kobento.dev`, or `-PkobentoServer=...` at build time. To test against
 a local server (kobento-mcp's examples and deploy servers behind one origin), forward the port

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,7 +26,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,6 +42,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
@@ -55,47 +60,102 @@ data class AccountUi(
     val onOpenPage: (PublishedPage) -> Unit,
 )
 
+/** The gallery's two tabs: the bundled showcases, and the signed-in account's own pages. */
+enum class GalleryTab(val label: String, val icon: Int) {
+    Showcases("Showcases", R.drawable.ic_showcases),
+    Stream("Stream", R.drawable.ic_stream),
+    Pages("Your pages", R.drawable.ic_person),
+}
+
 @Composable
-fun GalleryScreen(showcases: List<Showcase>, account: AccountUi, onOpen: (Showcase) -> Unit) {
-    Scaffold(containerColor = MaterialTheme.colorScheme.background) { insets ->
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 168.dp),
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = 16.dp, end = 16.dp,
-                top = insets.calculateTopPadding() + 16.dp,
-                bottom = insets.calculateBottomPadding() + 16.dp,
-            ),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Column(Modifier.padding(bottom = 4.dp)) {
-                    AccountRow(account)
-                    Text("Kobento showcases", style = MaterialTheme.typography.headlineMedium)
-                    Text(
-                        "${showcases.size} RemoteCompose documents, played by the androidx player. " +
-                            "Tap one to run it.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+fun GalleryScreen(
+    showcases: List<Showcase>,
+    account: AccountUi,
+    stream: StreamUi,
+    tab: GalleryTab,
+    onTab: (GalleryTab) -> Unit,
+    onOpen: (Showcase) -> Unit,
+) {
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        bottomBar = {
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+                for (t in GalleryTab.entries) NavigationBarItem(
+                    selected = t == tab, onClick = { onTab(t) },
+                    icon = { Icon(painterResource(t.icon), contentDescription = null) },
+                    label = { Text(t.label) },
+                )
             }
-            val pages = account.pages
-            if (account.email != null && pages != null) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Text(if (pages.isEmpty()) "Your pages: none published yet. Pages you publish with Kobento's MCP tools appear here."
-                        else "Your pages", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 4.dp))
-                }
-                items(pages, key = { "page-" + it.id }) { PageCard(it, onClick = { account.onOpenPage(it) }) }
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Text("Showcases", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
-                }
-            }
-            items(showcases, key = { it.id }) { ShowcaseCard(it, onClick = { onOpen(it) }) }
+        },
+    ) { insets ->
+        when (tab) {
+            GalleryTab.Showcases -> ShowcasesTab(showcases, insets, onOpen)
+            GalleryTab.Stream -> StreamTab(stream, insets)
+            GalleryTab.Pages -> PagesTab(account, insets)
         }
     }
 }
+
+@Composable
+internal fun CardGrid(insets: PaddingValues, content: LazyGridScope.() -> Unit) {
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 168.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            start = 16.dp, end = 16.dp,
+            top = insets.calculateTopPadding() + 16.dp,
+            bottom = insets.calculateBottomPadding() + 16.dp,
+        ),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        content = content,
+    )
+}
+
+@Composable
+private fun ShowcasesTab(showcases: List<Showcase>, insets: PaddingValues, onOpen: (Showcase) -> Unit) {
+    CardGrid(insets) {
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Column(Modifier.padding(bottom = 4.dp)) {
+                Text("Kobento showcases", style = MaterialTheme.typography.headlineMedium)
+                Text(
+                    "${showcases.size} RemoteCompose documents, played by the androidx player. " +
+                        "Tap one to run it.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        items(showcases, key = { it.id }) { ShowcaseCard(it, onClick = { onOpen(it) }) }
+    }
+}
+
+@Composable
+private fun PagesTab(account: AccountUi, insets: PaddingValues) {
+    CardGrid(insets) {
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Column(Modifier.padding(bottom = 4.dp)) {
+                Text("Your pages", style = MaterialTheme.typography.headlineMedium)
+                AccountRow(account)
+            }
+        }
+        val pages = account.pages
+        when {
+            account.email == null -> item(span = { GridItemSpan(maxLineSpan) }) {
+                Hint("Sign in with your Kobento account to play the pages you published with Kobento's MCP tools.")
+            }
+            pages == null -> {}
+            pages.isEmpty() -> item(span = { GridItemSpan(maxLineSpan) }) {
+                Hint("None published yet. Pages you publish with Kobento's MCP tools appear here.")
+            }
+            else -> items(pages, key = { it.id }) { PageCard(it, onClick = { account.onOpenPage(it) }) }
+        }
+    }
+}
+
+@Composable
+internal fun Hint(text: String) =
+    Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
 @Composable
 private fun ShowcaseCard(showcase: Showcase, onClick: () -> Unit) {
@@ -139,9 +199,9 @@ private fun ShowcaseCard(showcase: Showcase, onClick: () -> Unit) {
 /** Sign in, or who is signed in (and sign out); a sign-in error under it. */
 @Composable
 private fun AccountRow(account: AccountUi) {
-    Column(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+    Column(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(account.email?.let { "Signed in as $it" } ?: "Sign in to see the pages you published",
+            Text(account.email?.let { "Signed in as $it" } ?: "Not signed in",
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
             when {
@@ -168,21 +228,27 @@ private fun PageCard(page: PublishedPage, onClick: () -> Unit) {
             Modifier.fillMaxWidth().aspectRatio(3f / 4f).background(MaterialTheme.colorScheme.surfaceContainerHigh),
             contentAlignment = Alignment.Center,
         ) {
-            val preview by produceState<ImageBitmap?>(null, page.previewUrl) {
-                value = page.previewUrl?.let { u ->
-                    runCatching { download(u).let { BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap() } }.getOrNull()
-                }
-            }
-            preview?.let {
-                Image(it, contentDescription = null, contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxSize().padding(8.dp).clip(RoundedCornerShape(6.dp)))
-            }
+            Preview(page.previewUrl)
         }
         Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
             Text(page.title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(listOfNotNull(page.created.take(10).ifBlank { null }, page.rcBytes.takeIf { it > 0 }?.let(::formatBytes)).joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+    }
+}
+
+/** A published page's preview.png, downloaded (nothing while it loads or when there is none). */
+@Composable
+internal fun Preview(url: String?) {
+    val preview by produceState<ImageBitmap?>(null, url) {
+        value = url?.let { u ->
+            runCatching { download(u).let { BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap() } }.getOrNull()
+        }
+    }
+    preview?.let {
+        Image(it, contentDescription = null, contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize().padding(8.dp).clip(RoundedCornerShape(6.dp)))
     }
 }
 
