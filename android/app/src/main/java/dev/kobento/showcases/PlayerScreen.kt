@@ -185,6 +185,13 @@ private fun RemoteComposePlayer.fullSpeed(context: Context) {
     setDefaultMaxAvgFps(fps)
 }
 
+/**
+ * Runtime shaders on: the player's default ShaderControl refuses every shader (isShaderValid
+ * returns false), so a document's shader paints draw nothing. setDocument checks the document's
+ * shaders against the control, so it is set first.
+ */
+private fun RemoteComposePlayer.allowShaders() = setShaderControl { true }
+
 @Suppress("DEPRECATION")   // Context.getDisplay needs API 30; the app runs from 26
 private fun displayRefreshRate(context: Context): Float =
     (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.refreshRate
@@ -201,7 +208,7 @@ internal fun Player(bytes: ByteArray, look: Look) {
     }
     AndroidView(
         modifier = Modifier.fillMaxSize(),
-        factory = { DpHost(it, RemoteComposePlayer(it).apply { fullSpeed(it); setTheme(theme); setDocument(bytes); setUseChoreographer(false) }) },
+        factory = { DpHost(it, RemoteComposePlayer(it).apply { fullSpeed(it); allowShaders(); setTheme(theme); setDocument(bytes); setUseChoreographer(false) }) },
         // Auto follows the system: the theme changes in place, the document keeps its state.
         update = { (it.child as RemoteComposePlayer).setTheme(theme) },
     )
