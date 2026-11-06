@@ -1,0 +1,267 @@
+package dev.kobento.showcases
+
+import android.content.Context
+import android.net.Uri
+import android.util.Base64
+import androidx.browser.customtabs.CustomTabsIntent
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.core.content.edit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLEncoder
+import java.security.MessageDigest
+import java.security.SecureRandom
+
+/**
+ * Signing in to a Kobento server (mcp.kobento.dev) the way a native app should (RFC 8252): the
+ * server's own sign-in page in a Custom Tab, OAuth 2.1's authorization code with PKCE, and the
+ * answer coming back to the app on its private scheme, dev.kobento.showcases:/oauth.
+ *
+ * The app registers itself once per server (dynamic client registration, RFC 7591), keeps the
+ * access token (1 h) and the refresh token (30 days, a new one on every refresh) in its private
+ * preferences, and refreshes when the access token has expired or is refused. A visitor already
+ * signed in on the website in the browser only sees the "Allow" page.
+ */
+class Account(context: Context) {
+    private val prefs = context.getSharedPreferences("account", Context.MODE_PRIVATE)
+
+    /** A server named by this launch (`--es server http://localhost:8899`); never saved. */
+    private var override: String? = null
+    private var meta: JSONObject? = null
+
+    /** The server: BuildConfig.KOBENTO_SERVER, or the one this launch named. */
+    val server: String get() = override ?: BuildConfig.KOBENTO_SERVER.trimEnd('/')
+
+    /** The signed-in account's email, or null: Compose state, so the gallery follows it. */
+    var email by mutableStateOf(prefs.getString(K_EMAIL, null)?.takeIf { prefs.contains(K_REFRESH) })
+        private set
+
+    init { forgetOtherServer() }
+
+    /** Another server for this launch only (tests against a local one); the next plain launch is back on the default. */
+    fun useServer(url: String) {
+        override = url.trimEnd('/')
+        forgetOtherServer()
+    }
+
+    /** The saved tokens and client id belong to one server ([K_SERVER]): on another, sign out of that one. */
+    private fun forgetOtherServer() {
+        if (prefs.getString(K_SERVER, null) == server) return
+        clear()
+        meta = null
+        prefs.edit { putString(K_SERVER, server); remove(K_CLIENT); remove(K_CLIENT_FOR); remove(K_STATE); remove(K_VERIFIER) }
+    }
+
+    /** Opens the server's sign-in page; the answer arrives as an intent ([finishSignIn]). */
+    suspend fun startSignIn(context: Context) {
+        val meta = metadata()
+        val clientId = clientId(meta)
+        val verifier = random(48)
+        val state = random(16)
+        prefs.edit { putString(K_VERIFIER, verifier); putString(K_STATE, state) }
+        val challenge = b64(MessageDigest.getInstance("SHA-256").digest(verifier.toByteArray()))
+        val uri = Uri.parse(meta.getString("authorization_endpoint")).buildUpon()
+            .appendQueryParameter("response_type", "code")
+            .appendQueryParameter("client_id", clientId)
+            .appendQueryParameter("redirect_uri", REDIRECT)
+            .appendQueryParameter("code_challenge", challenge)
+            .appendQueryParameter("code_challenge_method", "S256")
+            .appendQueryParameter("scope", "mcp")
+            .appendQueryParameter("state", state)
+            .build()
+        CustomTabsIntent.Builder().setShowTitle(true).build().launchUrl(context, uri)
+    }
+
+    /** True when [uri] is the sign-in's answer (dev.kobento.showcases:/oauth?...). */
+    fun isRedirect(uri: Uri?) = uri != null && uri.scheme == SCHEME && uri.path == "/oauth"
+
+    /** Exchanges the answer's code for tokens, then reads who signed in. Throws with a message to show. */
+    suspend fun finishSignIn(uri: Uri) {
+        val state = prefs.getString(K_STATE, null)
+        val verifier = prefs.getString(K_VERIFIER, null)
+        prefs.edit { remove(K_STATE); remove(K_VERIFIER) }
+        uri.getQueryParameter("error")?.let { e ->
+            throw IOException(if (e == "access_denied") "Sign-in cancelled." else uri.getQueryParameter("error_description") ?: e)
+        }
+        if (state == null || verifier == null || uri.getQueryParameter("state") != state) throw IOException("This sign-in was not started here. Try again.")
+        val code = uri.getQueryParameter("code") ?: throw IOException("The server sent no code.")
+        val meta = metadata()
+        val tokens = post(meta.getString("token_endpoint"), mapOf(
+            "grant_type" to "authorization_code", "code" to code, "redirect_uri" to REDIRECT,
+            "client_id" to clientId(meta), "code_verifier" to verifier))
+        keep(tokens)
+        val me = pages()
+        prefs.edit { putString(K_EMAIL, me.email) }
+        email = me.email
+    }
+
+    /** The signed-in account's published pages, newest first (the server's deploy/pages.json). */
+    suspend fun pages(): MyPages {
+        val body = JSONObject(authorizedGet("$server/deploy/pages.json"))
+        val list = body.getJSONArray("pages")
+        return MyPages(body.getJSONObject("account").getString("email"), (0 until list.length()).map { i ->
+            val p = list.getJSONObject(i)
+            val doc = p.optJSONObject("document")
+            PublishedPage(
+                id = p.getString("id"), title = p.optString("title").ifBlank { "Untitled" }, url = p.getString("url"),
+                rcUrl = p.getString("rc_url"), previewUrl = p.optString("preview_url").takeIf { it.isNotBlank() && it != "null" },
+                created = p.optString("created"), rcBytes = p.optInt("rc_bytes"),
+                width = doc?.optInt("width") ?: 0, height = doc?.optInt("height") ?: 0,
+            )
+        })
+    }
+
+    /** Signs out: the server forgets the grant (revoking the refresh token), the app its tokens. */
+    suspend fun signOut() {
+        val refresh = prefs.getString(K_REFRESH, null)
+        clear()
+        if (refresh != null) runCatching {
+            metadata().optString("revocation_endpoint").takeIf { it.isNotBlank() }?.let { post(it, mapOf("token" to refresh, "client_id" to (prefs.getString(K_CLIENT, null) ?: ""))) }
+        }
+    }
+
+    private fun clear() {
+        prefs.edit { remove(K_ACCESS); remove(K_REFRESH); remove(K_EXPIRES); remove(K_EMAIL) }
+        email = null
+    }
+
+    // --- tokens
+
+    private fun keep(t: JSONObject) {
+        prefs.edit {
+            putString(K_ACCESS, t.getString("access_token"))
+            t.optString("refresh_token").takeIf { it.isNotBlank() }?.let { putString(K_REFRESH, it) }
+            putLong(K_EXPIRES, System.currentTimeMillis() + t.optLong("expires_in", 3600) * 1000 - 60_000)
+        }
+    }
+
+    private suspend fun accessToken(forceRefresh: Boolean = false): String {
+        val access = prefs.getString(K_ACCESS, null)
+        if (!forceRefresh && access != null && System.currentTimeMillis() < prefs.getLong(K_EXPIRES, 0)) return access
+        val refresh = prefs.getString(K_REFRESH, null) ?: throw SignedOut()
+        val meta = metadata()
+        val t = try {
+            post(meta.getString("token_endpoint"), mapOf("grant_type" to "refresh_token", "refresh_token" to refresh, "client_id" to clientId(meta)))
+        } catch (e: HttpError) {
+            if (e.status in 400..401) { clear(); throw SignedOut() }   // expired or revoked: sign in again
+            throw e
+        }
+        keep(t)
+        return t.getString("access_token")
+    }
+
+    private suspend fun authorizedGet(url: String): String {
+        try {
+            return get(url, accessToken())
+        } catch (e: HttpError) {
+            if (e.status != 401) throw e
+        }
+        return try { get(url, accessToken(forceRefresh = true)) } catch (e: HttpError) {
+            if (e.status == 401) { clear(); throw SignedOut() }
+            throw e
+        }
+    }
+
+    // --- the server
+
+    private suspend fun metadata(): JSONObject = meta ?: JSONObject(get("$server/.well-known/oauth-authorization-server")).also { meta = it }
+
+    /** This app's client id on the server, registered the first time. */
+    private suspend fun clientId(meta: JSONObject): String {
+        prefs.getString(K_CLIENT, null)?.takeIf { prefs.getString(K_CLIENT_FOR, null) == server }?.let { return it }
+        val reg = JSONObject().put("client_name", "Kobento showcases (Android)")
+            .put("redirect_uris", org.json.JSONArray().put(REDIRECT))
+            .put("grant_types", org.json.JSONArray().put("authorization_code").put("refresh_token"))
+            .put("token_endpoint_auth_method", "none")
+        val id = JSONObject(request("POST", meta.getString("registration_endpoint"), reg.toString(), "application/json")).getString("client_id")
+        prefs.edit { putString(K_CLIENT, id); putString(K_CLIENT_FOR, server) }
+        return id
+    }
+
+    private suspend fun get(url: String, bearer: String? = null) = request("GET", url, null, null, bearer)
+
+    private suspend fun post(url: String, form: Map<String, String>) = JSONObject(request("POST", url,
+        form.entries.joinToString("&") { (k, v) -> "${enc(k)}=${enc(v)}" }, "application/x-www-form-urlencoded"))
+
+    private suspend fun request(method: String, url: String, body: String?, type: String?, bearer: String? = null): String =
+        withContext(Dispatchers.IO) {
+            val c = URL(url).openConnection() as HttpURLConnection
+            try {
+                c.requestMethod = method
+                c.connectTimeout = 15_000
+                c.readTimeout = 20_000
+                c.setRequestProperty("Accept", "application/json")
+                bearer?.let { c.setRequestProperty("Authorization", "Bearer $it") }
+                if (body != null) {
+                    c.doOutput = true
+                    c.setRequestProperty("Content-Type", type)
+                    c.outputStream.use { it.write(body.toByteArray()) }
+                }
+                val status = c.responseCode
+                val text = (if (status < 400) c.inputStream else c.errorStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
+                if (status >= 400) {
+                    val why = runCatching { JSONObject(text).let { it.optString("error_description").ifBlank { it.optString("error") } } }.getOrNull()
+                    throw HttpError(status, why?.ifBlank { null } ?: "HTTP $status")
+                }
+                text
+            } finally {
+                c.disconnect()
+            }
+        }
+
+    class HttpError(val status: Int, message: String) : IOException(message)
+    class SignedOut : IOException("Signed out: sign in again.")
+
+    companion object {
+        const val SCHEME = "dev.kobento.showcases"
+        const val REDIRECT = "$SCHEME:/oauth"
+        private const val K_SERVER = "server"   // the server the saved tokens belong to
+        private const val K_CLIENT = "client_id"
+        private const val K_CLIENT_FOR = "client_server"
+        private const val K_ACCESS = "access"
+        private const val K_REFRESH = "refresh"
+        private const val K_EXPIRES = "expires"
+        private const val K_EMAIL = "email"
+        private const val K_VERIFIER = "verifier"
+        private const val K_STATE = "state"
+
+        private fun enc(s: String) = URLEncoder.encode(s, "UTF-8")
+        private fun b64(b: ByteArray) = Base64.encodeToString(b, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
+        private fun random(n: Int) = b64(ByteArray(n).also { SecureRandom().nextBytes(it) })
+    }
+}
+
+/** What pages.json returns: who is signed in, and their pages. */
+data class MyPages(val email: String, val pages: List<PublishedPage>)
+
+/** A page the account published (rc-deploy), with its document as an .rc. */
+data class PublishedPage(
+    val id: String,
+    val title: String,
+    val url: String,
+    val rcUrl: String,
+    val previewUrl: String?,
+    val created: String,
+    val rcBytes: Int,
+    val width: Int,
+    val height: Int,
+)
+
+/** Downloads a public file (a page's .rc or preview). */
+suspend fun download(url: String): ByteArray = withContext(Dispatchers.IO) {
+    val c = URL(url).openConnection() as HttpURLConnection
+    try {
+        c.connectTimeout = 15_000
+        c.readTimeout = 30_000
+        if (c.responseCode >= 400) throw IOException("HTTP ${c.responseCode} for $url")
+        c.inputStream.use { it.readBytes() }
+    } finally {
+        c.disconnect()
+    }
+}

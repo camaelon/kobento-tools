@@ -8,6 +8,7 @@ androidx RemoteCompose player, `androidx.compose.remote:remote-player-view`.
   resize. A watch face, a square document or a 4×1 widget is shown at its own shape.
 - Looks: Auto (follows the system's light or dark), Light, Dark, and the mono light and mono dark
   documents.
+- Sign in to a Kobento account to play the pages you published too.
 
 ## Build
 
@@ -22,6 +23,31 @@ git clone https://github.com/camaelon/kobento-mcp ../../kobento-mcp   # if not t
 
 To open one showcase directly:
 `adb shell am start -n dev.kobento.showcases/.MainActivity --es showcase SHW-23`
+
+## Sign in
+
+**Sign in** at the top of the gallery opens mcp.kobento.dev's own sign-in page in a Custom Tab.
+Someone already signed in on the website in that browser only sees the "Allow" page; otherwise
+they sign in once (an emailed link, an account token, or a new account). The gallery then gets
+a **Your pages** section: the pages the account published with Kobento's MCP tools, each
+played like a showcase (its `.rc`, from the page's public link).
+
+The app is an OAuth 2.1 public client of the server (RFC 8252, `Account.kt`): it registers
+itself the first time (dynamic client registration), signs in with PKCE, and gets the answer
+back on its own scheme, `dev.kobento.showcases:/oauth`. It keeps the access token (1 h) and the
+refresh token (30 days, rotated on each use) in its private preferences. **Sign out** revokes the
+grant on the server. You can also disconnect the app under Connected apps on the account page.
+The list comes from `GET <server>/deploy/pages.json` with the access token.
+
+The server is `https://mcp.kobento.dev`, or `-PkobentoServer=...` at build time. To test against
+a local server (kobento-mcp's examples and deploy servers behind one origin), forward the port
+and name it at launch. The name holds for that launch only: a plain launch is back on the
+default server, signed out of the other one. Debug builds allow plain HTTP to `localhost` only.
+
+```sh
+adb reverse tcp:8899 tcp:8899
+adb shell am start -n dev.kobento.showcases/.MainActivity --es server http://localhost:8899
+```
 
 ## Which player
 

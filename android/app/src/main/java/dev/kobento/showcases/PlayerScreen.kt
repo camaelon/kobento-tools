@@ -94,7 +94,7 @@ fun PlayerScreen(showcase: Showcase, onBack: () -> Unit) {
             if (showcase.unsupported != null && !anyway) {
                 Unsupported(showcase.unsupported, Modifier.weight(1f).fillMaxWidth(), onPlay = { anyway = true })
             } else {
-                DocumentFrame(showcase, Modifier.weight(1f).fillMaxWidth()) {
+                DocumentFrame(showcase.formFactor, Modifier.weight(1f).fillMaxWidth()) {
                     // A new player per look: each look is its own document (or the same one in another theme).
                     key(look) { Player(bytes, look) }
                 }
@@ -115,10 +115,10 @@ private fun Unsupported(reason: String, modifier: Modifier, onPlay: () -> Unit) 
 
 /** The document at the size its form factor wants: a phone or tablet fills the screen and relays out to it. */
 @Composable
-private fun DocumentFrame(showcase: Showcase, modifier: Modifier, content: @Composable () -> Unit) {
+internal fun DocumentFrame(formFactor: String, modifier: Modifier, content: @Composable () -> Unit) {
     BoxWithConstraints(modifier.padding(12.dp), contentAlignment = Alignment.Center) {
         val side = minOf(maxWidth, maxHeight)
-        val frame = when (showcase.formFactor) {
+        val frame = when (formFactor) {
             "watch-round" -> Modifier.size(side * 0.9f).clip(CircleShape)
             "square" -> Modifier.size(side)
             "widget-4x1" -> Modifier.fillMaxWidth().aspectRatio(4f).clip(RoundedCornerShape(16.dp))
@@ -154,7 +154,7 @@ private fun Details(showcase: Showcase, bytes: Int) {
 }
 
 @Composable
-private fun Fact(label: String, value: String) {
+internal fun Fact(label: String, value: String) {
     Column {
         Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, style = MaterialTheme.typography.titleSmall)
@@ -189,11 +189,11 @@ private fun RemoteComposePlayer.fullSpeed(context: Context) {
 private fun displayRefreshRate(context: Context): Float =
     (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.refreshRate
 
-private fun formatBytes(n: Int) = if (n < 1024) "$n B" else "%.1f KB".format(n / 1024.0)
+internal fun formatBytes(n: Int) = if (n < 1024) "$n B" else "%.1f KB".format(n / 1024.0)
 
 @SuppressLint("VisibleForTests")   // setUseChoreographer is marked for tests: see fullSpeed
 @Composable
-private fun Player(bytes: ByteArray, look: Look) {
+internal fun Player(bytes: ByteArray, look: Look) {
     val theme = when (look) {
         Look.Auto -> if (isSystemInDarkTheme()) RemoteComposePlayer.THEME_DARK else RemoteComposePlayer.THEME_LIGHT
         Look.Light, Look.MonoLight -> RemoteComposePlayer.THEME_LIGHT

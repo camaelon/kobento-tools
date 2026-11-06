@@ -58,6 +58,9 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
+        // The server to sign in to: -PkobentoServer=... (a launch can name another: `--es server`).
+        val server = providers.gradleProperty("kobentoServer").getOrElse("https://mcp.kobento.dev")
+        buildConfigField("String", "KOBENTO_SERVER", "\"$server\"")
     }
 
     buildTypes {
@@ -72,7 +75,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     // The player's API is @RestrictTo(LIBRARY_GROUP) in the alphas: using it from an app is the point here.
     lint { disable += "RestrictedApi" }
 }
@@ -91,4 +94,5 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.activity.compose)
     implementation(libs.core.ktx)
+    implementation(libs.browser)
 }
