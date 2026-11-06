@@ -105,16 +105,21 @@ class Account(context: Context) {
     suspend fun pages(): MyPages {
         val body = JSONObject(authorizedGet("$server/deploy/pages.json"))
         val list = body.getJSONArray("pages")
-        return MyPages(body.getJSONObject("account").getString("email"), (0 until list.length()).map { i ->
-            val p = list.getJSONObject(i)
-            val doc = p.optJSONObject("document")
-            PublishedPage(
-                id = p.getString("id"), title = p.optString("title").ifBlank { "Untitled" }, url = p.getString("url"),
-                rcUrl = p.getString("rc_url"), previewUrl = p.optString("preview_url").takeIf { it.isNotBlank() && it != "null" },
-                created = p.optString("created"), rcBytes = p.optInt("rc_bytes"),
-                width = doc?.optInt("width") ?: 0, height = doc?.optInt("height") ?: 0,
-            )
-        })
+        val account = body.getJSONObject("account")
+        return MyPages(account.getString("email"), account.optString("name").takeIf { it.isNotBlank() && it != "null" },
+            (0 until list.length()).map { i ->
+                val p = list.getJSONObject(i)
+                val doc = p.optJSONObject("document")
+                PublishedPage(
+                    id = p.getString("id"), title = p.optString("title").ifBlank { "Untitled" }, url = p.getString("url"),
+                    rcUrl = p.getString("rc_url"), previewUrl = p.optString("preview_url").takeIf { it.isNotBlank() && it != "null" },
+                    created = p.optString("created"), rcBytes = p.optInt("rc_bytes"),
+                    width = doc?.optInt("width") ?: 0, height = doc?.optInt("height") ?: 0,
+                    stream = p.optJSONObject("stream")?.let { st ->
+                        StreamEntry(st.optString("title"), st.optJSONArray("tags").strings(), st.optInt("score"))
+                    },
+                )
+            })
     }
 
     /**
@@ -165,6 +170,34 @@ class Account(context: Context) {
         }
         val j = JSONObject(text)
         return Vote(j.optInt("score"), j.optInt("ups"), j.optInt("downs"), j.optInt("my_vote"))
+    }
+
+    /**
+     * Posts one of the account's pages to the stream, or renames and retags it there: [tags] as
+     * "a, b". [name], when given, becomes the account's public name first (posting needs one).
+     */
+    suspend fun postToStream(pageId: String, title: String, tags: String, name: String?): StreamEntry {
+        val form = buildMap {
+            put("title", title); put("tags", tags)
+            if (name != null) put("name", name)
+        }
+        val j = JSONObject(authorizedPost("$server/examples/stream/$pageId/post", form)).getJSONObject("item")
+        return StreamEntry(j.optString("title"), j.optJSONArray("tags").strings(), j.optInt("score"))
+    }
+
+    /** Takes one of the account's pages out of the stream (its votes go too). */
+    suspend fun removeFromStream(pageId: String) {
+        authorizedPost("$server/examples/stream/$pageId/remove", emptyMap())
+    }
+
+    private suspend fun authorizedPost(url: String, form: Map<String, String>): String {
+        val body = form.entries.joinToString("&") { (k, v) -> "${enc(k)}=${enc(v)}" }
+        return try {
+            request("POST", url, body, "application/x-www-form-urlencoded", accessToken())
+        } catch (e: HttpError) {
+            if (e.status != 401) throw e
+            request("POST", url, body, "application/x-www-form-urlencoded", accessToken(forceRefresh = true))
+        }
     }
 
     /** Signs out: the server forgets the grant (revoking the refresh token), the app its tokens. */
@@ -288,8 +321,11 @@ class Account(context: Context) {
     }
 }
 
-/** What pages.json returns: who is signed in, and their pages. */
-data class MyPages(val email: String, val pages: List<PublishedPage>)
+/** What pages.json returns: who is signed in (and the public name the stream shows), and their pages. */
+data class MyPages(val email: String, val name: String?, val pages: List<PublishedPage>)
+
+/** A page's entry in the stream: the name it is shown under, its tags and its score. */
+data class StreamEntry(val title: String, val tags: List<String>, val score: Int)
 
 /** A page the account published (rc-deploy), with its document as an .rc. */
 data class PublishedPage(
@@ -302,6 +338,8 @@ data class PublishedPage(
     val rcBytes: Int,
     val width: Int,
     val height: Int,
+    /** Its entry in the stream, when the account posted it (only on the account's own pages). */
+    val stream: StreamEntry? = null,
 )
 
 /** What stream/items.json returns: the items, and the tags in use (the most used first). */

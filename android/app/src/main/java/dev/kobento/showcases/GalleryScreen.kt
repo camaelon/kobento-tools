@@ -234,6 +234,10 @@ private fun PageCard(page: PublishedPage, onClick: () -> Unit) {
             Text(page.title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(listOfNotNull(page.created.take(10).ifBlank { null }, page.rcBytes.takeIf { it > 0 }?.let(::formatBytes)).joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            page.stream?.let {
+                Text("In the stream · score ${it.score}", style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary, maxLines = 1)
+            }
         }
     }
 }

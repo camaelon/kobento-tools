@@ -66,7 +66,8 @@ private fun App(start: String?, account: Account, redirect: MutableState<Uri?>) 
     val showcases = remember { loadShowcases(context.assets) }
     var openId by rememberSaveable { mutableStateOf(start) }
     // A published page playing (the account's, or a stream item's), with the line under its title.
-    var openPage by remember { mutableStateOf<Pair<PublishedPage, String>?>(null) }
+    var openPage by remember { mutableStateOf<OpenPage?>(null) }
+    var name by remember { mutableStateOf<String?>(null) }
     val stream = remember { StreamState() }
     var tab by rememberSaveable { mutableStateOf(GalleryTab.Showcases) }
     var busy by remember { mutableStateOf(false) }
@@ -81,14 +82,15 @@ private fun App(start: String?, account: Account, redirect: MutableState<Uri?>) 
             busy = false
         }
     }
-    val refresh = { run { pages = account.pages().pages } }
+    suspend fun reload() { val mine = account.pages(); pages = mine.pages; name = mine.name }
+    val refresh = { run { reload() } }
 
     // The sign-in's answer: tokens, then the pages.
     val answer = redirect.value
     LaunchedEffect(answer) {
         if (answer != null) {
             redirect.value = null
-            run { account.finishSignIn(answer); pages = account.pages().pages }
+            run { account.finishSignIn(answer); reload() }
         }
     }
     // Signed in from before: list the pages once.
@@ -99,7 +101,14 @@ private fun App(start: String?, account: Account, redirect: MutableState<Uri?>) 
     when {
         playing != null -> {
             BackHandler { openPage = null }
-            PagePlayerScreen(playing.first, playing.second, onBack = { openPage = null })
+            // An own page follows the list (its stream entry changes when it is shared).
+            val page = if (playing.own) pages?.firstOrNull { it.id == playing.page.id } ?: playing.page else playing.page
+            val share = if (playing.own && account.email != null) ShareUi(
+                name = name,
+                post = { title, tags, newName -> account.postToStream(page.id, title, tags, newName); reload(); stream.reloads++ },
+                remove = { account.removeFromStream(page.id); reload(); stream.reloads++ },
+            ) else null
+            PagePlayerScreen(page, playing.subtitle, share, onBack = { openPage = null })
         }
         open != null -> {
             BackHandler { openId = null }
@@ -112,14 +121,14 @@ private fun App(start: String?, account: Account, redirect: MutableState<Uri?>) 
                 onSignIn = { run { account.startSignIn(context) } },
                 onSignOut = { run { account.signOut(); pages = null } },
                 onRefresh = refresh,
-                onOpenPage = { openPage = it to "Your page" },
+                onOpenPage = { openPage = OpenPage(it, "Your page", own = true) },
             ),
             StreamUi(
                 state = stream, signedInAs = account.email,
                 load = { sort, tag, q -> account.stream(sort, tag, q) },
                 vote = { id, v -> account.vote(id, v) },
                 onSignIn = { run { account.startSignIn(context) } },
-                onOpen = { openPage = it.page to "by ${it.author}" },
+                onOpen = { openPage = OpenPage(it.page, "by ${it.author}", own = false) },
             ),
             tab = tab,
             onTab = { tab = it },
@@ -127,6 +136,9 @@ private fun App(start: String?, account: Account, redirect: MutableState<Uri?>) 
         )
     }
 }
+
+/** A published page playing: the account's own (shareable), or a stream item. */
+private data class OpenPage(val page: PublishedPage, val subtitle: String, val own: Boolean)
 
 // Kobento's site colours: the warm paper and the deep ink, the mark's blue as the accent.
 private val Accent = Color(0xFF409BF0)

@@ -12,7 +12,9 @@ Three tabs:
   documents.
 - **Stream**: the documents people shared on mcp.kobento.dev, newest or top first, filtered by
   tag or searched (titles, people, tags). Tap one to play it; signed in, vote it up or down.
-- **Your pages**: sign in to a Kobento account to play the pages you published.
+- **Your pages**: sign in to a Kobento account to play the pages you published, and share one
+  to the stream (its share button: a name and tags; the first time, your public name too), or
+  rename, retag or take it out again.
 
 ## Build
 
@@ -43,7 +45,8 @@ refresh token (30 days, rotated on each use) in its private preferences. **Sign 
 grant on the server. You can also disconnect the app under Connected apps on the account page.
 Your pages come from `GET <server>/deploy/pages.json` with the access token; the stream from
 `GET <server>/examples/stream/items.json` (public; with the token it adds your votes), and a
-vote is `POST <server>/examples/stream/<page id>/vote` with the token.
+vote is `POST <server>/examples/stream/<page id>/vote` with the token, and sharing is
+`POST .../stream/<page id>/post` (or `/remove`).
 
 The server is `https://mcp.kobento.dev`, or `-PkobentoServer=...` at build time. To test against
 a local server (kobento-mcp's examples and deploy servers behind one origin), forward the port
