@@ -21,6 +21,7 @@ var RC = (() => {
   // ../kobento-ts/src/web/main.ts
   var main_exports = {};
   __export(main_exports, {
+    CanvasPaintContext: () => CanvasPaintContext,
     RcPlayerElement: () => RcPlayerElement,
     RcdPlayer: () => RcdPlayer,
     WebCustomHost: () => WebCustomHost,
@@ -10864,7 +10865,9 @@ var RC = (() => {
   var WIRE_EDGE2 = 2048;
   var WIRE_EDGE_MASK = WIRE_EDGE0 | WIRE_EDGE1 | WIRE_EDGE2;
   var MODE_SOFTWARE_WIREFRAME = MODE_SOFTWARE_FLAT | MODE_WIREFRAME;
+  var MODE_BACKEND_SOFTWARE = 0;
   var MODE_BACKEND_CANVAS = 1;
+  var MODE_BACKEND_GL = 3;
   var MODE_BACKEND_CANVAS_ZBUF = 5;
   function isPaint3DContext(ctx) {
     return !!ctx && typeof ctx.drawMesh3D === "function";
@@ -13594,6 +13597,21 @@ var RC = (() => {
   };
   _MeshPrimitive.OP_CODE = 120;
   var MeshPrimitive = _MeshPrimitive;
+  function drawsWireframe3D(ops) {
+    const seen = /* @__PURE__ */ new Set();
+    const visit = (x) => {
+      if (x === null || typeof x !== "object" || seen.has(x)) return false;
+      seen.add(x);
+      if (x instanceof DrawMesh3D) return (x.mMode & MODE_WIREFRAME) !== 0;
+      if (Array.isArray(x)) return x.some(visit);
+      if (!(x instanceof Operation)) return false;
+      for (const v of Object.values(x)) {
+        if ((Array.isArray(v) || v instanceof Operation) && visit(v)) return true;
+      }
+      return false;
+    };
+    return visit(ops);
+  }
 
   // ../kobento-ts/src/core/operations/d3/MeshExpression.ts
   var SURFACE_HEIGHT_FIELD = 1;
@@ -26101,6 +26119,48 @@ var RC = (() => {
     getTextureData() {
       return { pixels: this.mTexPixels, width: this.mTexW, height: this.mTexH };
     }
+    /** A mesh as defined, for a host that uploads geometry to the GPU itself. */
+    getMesh(meshId) {
+      return this.mMeshes.get(meshId);
+    }
+    /**
+     * Everything a GPU backend needs to draw the current state, resolved the way the software
+     * path resolves it.
+     *
+     * This exists so the GL backend shades from the *same* numbers rather than re-deriving
+     * them: the lights are already in eye space with intensity folded into the colour, and the
+     * matrices are the same products the software path builds. Two renderers that each compute
+     * their own eye-space lights from the document will drift, and the drift shows up as a
+     * lighting difference that looks like a shader bug.
+     */
+    getGlFrame() {
+      multiply(this.mPV, this.mProj, this.mView);
+      multiply(this.mMV, this.mView, this.mModel);
+      multiply(this.mMVP, this.mPV, this.mModel);
+      this.prepareLightsEyeSpace();
+      const lights = [];
+      for (let i = 0; i < this.mNumEyeLights; i++) {
+        lights.push({
+          type: this.mEType[i],
+          x: this.mElx[i],
+          y: this.mEly[i],
+          z: this.mElz[i],
+          r: this.mElr[i],
+          g: this.mElg[i],
+          b: this.mElb[i]
+        });
+      }
+      return {
+        mvp: this.mMVP,
+        mv: this.mMV,
+        lights,
+        specStrength: this.mSpecStrength,
+        shininess: this.mShininess,
+        depthBiasC: this.mDepthBiasC,
+        depthBiasS: this.mDepthBiasS,
+        baseColorArgb: this.mBaseColorArgb
+      };
+    }
     buildCanvasVertices(meshId, out, smooth) {
       out.vertexCount = 0;
       const m = this.mMeshes.get(meshId);
@@ -26322,13 +26382,14 @@ void main() {
 }`;
   var FRAG = `#version 300 es
 precision highp float;
-in vec4 vColor;
+in vec4 vColorW;
+in float vW;
 in vec2 vUv;
 uniform sampler2D uTex;
 uniform bool uUseTex;
 out vec4 fragColor;
 void main() {
-    vec4 c = vColor;
+    vec4 c = vColorW / vW;   // undo the perspective weighting: screen-affine, as software
     if (uUseTex) {
         // Lighting modulates the sampled texel, as the reference does with a BitmapShader.
         c *= texture(uTex, vUv);
@@ -26338,6 +26399,150 @@ void main() {
     // compositing it with drawImage otherwise darkens every antialiased edge.
     fragColor = vec4(c.rgb * c.a, c.a);
 }`;
+  var LIGHT_FN = `
+const float AMBIENT = 0.2;
+const int LIGHT_POINT_T = 1;
+uniform int uNumLights;
+uniform int uLightType[32];
+uniform vec3 uLightVec[32];      // directional: unit vector TOWARD the light; point: eye pos
+uniform vec3 uLightColor[32];    // intensity already folded in
+uniform float uSpecStrength;
+uniform float uShininess;
+uniform vec4 uBaseColor;
+
+vec4 shade(vec3 n, vec3 p) {
+    float nlen = length(n);
+    vec3 N = nlen > 0.0 ? n / nlen : vec3(0.0);
+    vec3 l = vec3(AMBIENT);
+    vec3 s = vec3(0.0);
+    if (uSpecStrength > 0.0) {
+        // Glossy: the normal is flipped to face the viewer so highlights land on the lit
+        // side only, and a light behind the surface contributes nothing at all -- unlike
+        // the matte path below, which is two-sided.
+        vec3 V = length(p) > 0.0 ? normalize(-p) : vec3(0.0, 0.0, 1.0);
+        vec3 Nf = dot(N, V) < 0.0 ? -N : N;
+        for (int i = 0; i < uNumLights; i++) {
+            vec3 L = uLightType[i] == LIGHT_POINT_T ? normalize(uLightVec[i] - p) : uLightVec[i];
+            float ndl = dot(Nf, L);
+            if (ndl <= 0.0) { continue; }
+            l += uLightColor[i] * ndl;
+            vec3 H = L + V;
+            float hlen = length(H);
+            if (hlen <= 0.0) { continue; }
+            float ndh = dot(Nf, H) / hlen;
+            if (ndh <= 0.0) { continue; }
+            s += uLightColor[i] * (pow(ndh, uShininess) * uSpecStrength);
+        }
+    } else {
+        for (int i = 0; i < uNumLights; i++) {
+            vec3 L = uLightType[i] == LIGHT_POINT_T ? normalize(uLightVec[i] - p) : uLightVec[i];
+            l += uLightColor[i] * abs(dot(N, L));   // two-sided at this profile
+        }
+    }
+    return vec4(min(uBaseColor.rgb * l + s, vec3(1.0)), uBaseColor.a);
+}
+`;
+  var MODEL_HEAD = `#version 300 es
+precision highp float;
+uniform mat4 uMVP;
+uniform mat4 uMV;
+uniform float uDepthBiasC;
+out vec4 vColorW;
+out float vW;
+out vec2 vUv;
+` + LIGHT_FN;
+  var VERT_SMOOTH = MODEL_HEAD + `
+layout(location = 0) in vec3 aPos;
+layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec2 aUv;
+void main() {
+    vec4 eye = uMV * vec4(aPos, 1.0);
+    // mat3(uMV), deliberately, NOT the inverse transpose: the software path uses the plain
+    // upper 3x3 and under a non-uniform scale the two disagree. Matching the reference beats
+    // being right here, or the same document lights differently on the two backends.
+    vec4 pos = uMVP * vec4(aPos, 1.0);
+    pos.z += 2.0 * uDepthBiasC * pos.w;
+    vColorW = shade(mat3(uMV) * aNormal, eye.xyz) * pos.w;
+    vW = pos.w;
+    vUv = vec2(aUv.x, 1.0 - aUv.y);
+    gl_Position = pos;
+}`;
+  var VERT_FLAT = MODEL_HEAD + `
+layout(location = 0) in vec3 aPos;
+layout(location = 1) in vec3 aEdge1;
+layout(location = 2) in vec3 aEdge2;
+layout(location = 3) in vec3 aCentroid;
+layout(location = 4) in vec2 aUv;
+void main() {
+    mat3 mv3 = mat3(uMV);
+    vec3 n = cross(mv3 * aEdge1, mv3 * aEdge2);
+    // Matte flat shading lights the face once, at its centroid, so all three vertices get the
+    // same colour and the interpolation is constant. Glossy flat lights each vertex at its own
+    // position, so the view-dependent highlight gradates across the face. Both are the
+    // software path's behaviour.
+    vec3 p = uSpecStrength > 0.0 ? (uMV * vec4(aPos, 1.0)).xyz
+                                 : (uMV * vec4(aCentroid, 1.0)).xyz;
+    vec4 pos = uMVP * vec4(aPos, 1.0);
+    pos.z += 2.0 * uDepthBiasC * pos.w;
+    vColorW = shade(n, p) * pos.w;
+    vW = pos.w;
+    vUv = vec2(aUv.x, 1.0 - aUv.y);
+    gl_Position = pos;
+}`;
+  var FRAG_MODEL = `#version 300 es
+precision highp float;
+in vec4 vColorW;
+in float vW;
+in vec2 vUv;
+uniform sampler2D uTex;
+uniform bool uUseTex;
+out vec4 fragColor;
+void main() {
+    vec4 c = vColorW / vW;   // undo the perspective weighting: screen-affine, as software
+    if (uUseTex) {
+        vec4 t = texture(uTex, vUv);
+        // A fully transparent texel is skipped outright and writes no depth -- the software
+        // path tests the texel's alpha before it touches the z-buffer, so a cut-out texture
+        // does not occlude what is behind it.
+        if (t.a <= 0.0) { discard; }
+        c *= t;
+    }
+    if (c.a <= 0.0) { discard; }
+    fragColor = vec4(c.rgb * c.a, c.a);   // premultiplied, as the canvas expects
+}`;
+  function buildProgram(gl, vsrc, fsrc) {
+    const compile = (type, src) => {
+      const sh = gl.createShader(type);
+      if (!sh) return null;
+      gl.shaderSource(sh, src);
+      gl.compileShader(sh);
+      if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+        console.error("rc 3d model shader:", gl.getShaderInfoLog(sh));
+        gl.deleteShader(sh);
+        return null;
+      }
+      return sh;
+    };
+    const vs = compile(gl.VERTEX_SHADER, vsrc);
+    const fs = compile(gl.FRAGMENT_SHADER, fsrc);
+    if (!vs || !fs) return null;
+    const prog = gl.createProgram();
+    if (!prog) return null;
+    gl.attachShader(prog, vs);
+    gl.attachShader(prog, fs);
+    gl.linkProgram(prog);
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      console.error("rc 3d model link:", gl.getProgramInfoLog(prog));
+      return null;
+    }
+    return prog;
+  }
+  function attrib(gl, loc, size, stride, offset) {
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, size, gl.FLOAT, false, stride, offset);
+  }
   var WebGL3DRenderer = class {
     constructor() {
       this.gl = null;
@@ -26358,6 +26563,16 @@ void main() {
       /** Batches drawn since construction. Lets a harness prove the GPU path was taken rather
        *  than the software fallback, which is otherwise invisible in the output. */
       this.drawCount = 0;
+      // ── Model-space pipeline state ─────────────────────────────────────────────────────
+      this.modelProgSmooth = null;
+      this.modelProgFlat = null;
+      this.modelUniforms = /* @__PURE__ */ new Map();
+      /** Uploaded geometry, keyed `meshId:variant`. Built once, reused every frame. */
+      this.gpuMeshes = /* @__PURE__ */ new Map();
+      /** Whether this pass has been cleared yet. */
+      this.passStarted = false;
+      /** Batches drawn through the model-space path, for a harness to assert the GPU ran. */
+      this.modelDrawCount = 0;
       this.canvas = document.createElement("canvas");
     }
     /** The offscreen canvas — use as a drawImage source after `draw`. */
@@ -26518,6 +26733,273 @@ void main() {
       gl.drawArrays(gl.TRIANGLES, 0, n);
       this.drawCount++;
       gl.bindVertexArray(null);
+    }
+    /**
+     * Start a 3D pass: resize and clear colour and depth.
+     *
+     * Separate from `beginFrame` because the two backends accumulate differently. The canvas
+     * backends composite each mesh on its own, so they clear per mesh. The software path keeps
+     * ONE depth buffer for the whole pass and re-blits the accumulated buffer after every
+     * mesh, so meshes depth-test against each other — and the GL backend has to do the same or
+     * a document built from many small meshes (one per facet, say) loses all inter-mesh
+     * occlusion while still looking plausible.
+     */
+    beginPass(width, height) {
+      const gl = this.ensureGl();
+      if (!gl) return;
+      if (this.canvas.width !== width || this.canvas.height !== height) {
+        this.canvas.width = width;
+        this.canvas.height = height;
+      }
+      gl.viewport(0, 0, width, height);
+      gl.clearColor(0, 0, 0, 0);
+      gl.clearDepth(1);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      this.passStarted = true;
+    }
+    /** Drop a mesh's uploaded buffers, so a redefinition is not drawn from stale geometry. */
+    invalidateMesh(meshId) {
+      const gl = this.gl;
+      for (const variant of ["s", "f"]) {
+        const key = `${meshId}:${variant}`;
+        const m = this.gpuMeshes.get(key);
+        if (!m) continue;
+        if (gl) {
+          gl.deleteVertexArray(m.vao);
+          gl.deleteBuffer(m.vbo);
+          if (m.ibo) gl.deleteBuffer(m.ibo);
+        }
+        this.gpuMeshes.delete(key);
+      }
+    }
+    uniform(prog, name) {
+      let m = this.modelUniforms.get(prog);
+      if (!m) {
+        m = /* @__PURE__ */ new Map();
+        this.modelUniforms.set(prog, m);
+      }
+      if (!m.has(name)) {
+        const gl = this.gl;
+        m.set(name, gl.getUniformLocation(prog, name));
+      }
+      return m.get(name) ?? null;
+    }
+    ensureModelProgram(smooth) {
+      const gl = this.ensureGl();
+      if (!gl) return null;
+      const have = smooth ? this.modelProgSmooth : this.modelProgFlat;
+      if (have) return have;
+      const prog = buildProgram(gl, smooth ? VERT_SMOOTH : VERT_FLAT, FRAG_MODEL);
+      if (!prog) return null;
+      if (smooth) this.modelProgSmooth = prog;
+      else this.modelProgFlat = prog;
+      return prog;
+    }
+    /**
+     * Upload one mesh in the layout the requested variant needs, or return the cached upload.
+     *
+     * Smooth keeps the index buffer. Flat cannot: the face normal and the centroid belong to
+     * the triangle, not the vertex, so a vertex shared by two faces would need two different
+     * values. Expanding costs memory and is done once per mesh, not once per frame.
+     */
+    ensureGpuMesh(gl, meshId, mesh, smooth) {
+      const key = `${meshId}:${smooth ? "s" : "f"}`;
+      const cached = this.gpuMeshes.get(key);
+      if (cached) return cached;
+      const idx = mesh.indices;
+      const verts = mesh.verts;
+      const uv = mesh.uv;
+      const vao = gl.createVertexArray();
+      const vbo = gl.createBuffer();
+      if (!vao || !vbo) return null;
+      gl.bindVertexArray(vao);
+      gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+      let built;
+      if (smooth) {
+        const n = verts.length / 3;
+        const data = new Float32Array(n * 8);
+        const normals = mesh.normals;
+        for (let i = 0; i < n; i++) {
+          const o = i * 8;
+          data[o] = verts[i * 3];
+          data[o + 1] = verts[i * 3 + 1];
+          data[o + 2] = verts[i * 3 + 2];
+          if (normals) {
+            data[o + 3] = normals[i * 3];
+            data[o + 4] = normals[i * 3 + 1];
+            data[o + 5] = normals[i * 3 + 2];
+          }
+          if (uv) {
+            data[o + 6] = uv[i * 2];
+            data[o + 7] = uv[i * 2 + 1];
+          }
+        }
+        gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+        const stride = 8 * 4;
+        attrib(gl, 0, 3, stride, 0);
+        attrib(gl, 1, 3, stride, 12);
+        attrib(gl, 2, 2, stride, 24);
+        const ibo = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(idx), gl.STATIC_DRAW);
+        built = { vao, vbo, ibo, count: idx.length, indexed: true };
+      } else {
+        const tris = Math.floor(idx.length / 3);
+        const data = new Float32Array(tris * 3 * 14);
+        let o = 0;
+        for (let t = 0; t < tris; t++) {
+          const a = idx[t * 3], b = idx[t * 3 + 1], c = idx[t * 3 + 2];
+          const ax = verts[a * 3], ay = verts[a * 3 + 1], az = verts[a * 3 + 2];
+          const bx = verts[b * 3], by = verts[b * 3 + 1], bz = verts[b * 3 + 2];
+          const cx = verts[c * 3], cy = verts[c * 3 + 1], cz = verts[c * 3 + 2];
+          const e1x = bx - ax, e1y = by - ay, e1z = bz - az;
+          const e2x = cx - ax, e2y = cy - ay, e2z = cz - az;
+          const mx = (ax + bx + cx) / 3, my = (ay + by + cy) / 3, mz = (az + bz + cz) / 3;
+          const vi = [a, b, c];
+          const px = [ax, bx, cx], py = [ay, by, cy], pz = [az, bz, cz];
+          for (let k = 0; k < 3; k++) {
+            data[o] = px[k];
+            data[o + 1] = py[k];
+            data[o + 2] = pz[k];
+            data[o + 3] = e1x;
+            data[o + 4] = e1y;
+            data[o + 5] = e1z;
+            data[o + 6] = e2x;
+            data[o + 7] = e2y;
+            data[o + 8] = e2z;
+            data[o + 9] = mx;
+            data[o + 10] = my;
+            data[o + 11] = mz;
+            if (uv) {
+              data[o + 12] = uv[vi[k] * 2];
+              data[o + 13] = uv[vi[k] * 2 + 1];
+            }
+            o += 14;
+          }
+        }
+        gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+        const stride = 14 * 4;
+        attrib(gl, 0, 3, stride, 0);
+        attrib(gl, 1, 3, stride, 12);
+        attrib(gl, 2, 3, stride, 24);
+        attrib(gl, 3, 3, stride, 36);
+        attrib(gl, 4, 2, stride, 48);
+        built = { vao, vbo, ibo: null, count: tris * 3, indexed: false };
+      }
+      gl.bindVertexArray(null);
+      this.gpuMeshes.set(key, built);
+      return built;
+    }
+    /**
+     * Draw one mesh with the GPU pipeline. Returns false if WebGL2 is unavailable, so the
+     * caller can fall back to software rather than draw nothing.
+     */
+    drawModelSpace(meshId, mesh, frame, smooth, width, height) {
+      const gl = this.ensureGl();
+      if (!gl) return false;
+      const prog = this.ensureModelProgram(smooth);
+      if (!prog) return false;
+      if (!this.passStarted || this.canvas.width !== width || this.canvas.height !== height) {
+        this.beginPass(width, height);
+      }
+      const gpu = this.ensureGpuMesh(gl, meshId, mesh, smooth);
+      if (!gpu || gpu.count < 3) return true;
+      const useTex = this.texW > 0 && mesh.uv !== null;
+      gl.useProgram(prog);
+      gl.bindVertexArray(gpu.vao);
+      gl.uniformMatrix4fv(this.uniform(prog, "uMVP"), false, frame.mvp);
+      gl.uniformMatrix4fv(this.uniform(prog, "uMV"), false, frame.mv);
+      gl.uniform1f(this.uniform(prog, "uSpecStrength"), frame.specStrength);
+      gl.uniform1f(this.uniform(prog, "uShininess"), frame.shininess);
+      gl.uniform1f(this.uniform(prog, "uDepthBiasC"), frame.depthBiasC);
+      const base = frame.baseColorArgb;
+      gl.uniform4f(
+        this.uniform(prog, "uBaseColor"),
+        (base >>> 16 & 255) / 255,
+        (base >>> 8 & 255) / 255,
+        (base & 255) / 255,
+        (base >>> 24 & 255) / 255
+      );
+      const n = Math.min(frame.lights.length, 32);
+      gl.uniform1i(this.uniform(prog, "uNumLights"), n);
+      if (n > 0) {
+        const types = new Int32Array(n);
+        const vecs = new Float32Array(n * 3);
+        const cols = new Float32Array(n * 3);
+        for (let i = 0; i < n; i++) {
+          const l = frame.lights[i];
+          types[i] = l.type;
+          vecs[i * 3] = l.x;
+          vecs[i * 3 + 1] = l.y;
+          vecs[i * 3 + 2] = l.z;
+          cols[i * 3] = l.r;
+          cols[i * 3 + 1] = l.g;
+          cols[i * 3 + 2] = l.b;
+        }
+        gl.uniform1iv(this.uniform(prog, "uLightType[0]"), types);
+        gl.uniform3fv(this.uniform(prog, "uLightVec[0]"), vecs);
+        gl.uniform3fv(this.uniform(prog, "uLightColor[0]"), cols);
+      }
+      gl.uniform1i(this.uniform(prog, "uUseTex"), useTex ? 1 : 0);
+      if (useTex) {
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.uniform1i(this.uniform(prog, "uTex"), 0);
+      }
+      gl.enable(gl.DEPTH_TEST);
+      gl.depthFunc(gl.LESS);
+      gl.enable(gl.CULL_FACE);
+      gl.frontFace(gl.CCW);
+      gl.cullFace(gl.BACK);
+      if (frame.depthBiasS !== 0) {
+        gl.enable(gl.POLYGON_OFFSET_FILL);
+        gl.polygonOffset(frame.depthBiasS, 0);
+      } else {
+        gl.disable(gl.POLYGON_OFFSET_FILL);
+      }
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+      if (gpu.indexed) {
+        gl.drawElements(gl.TRIANGLES, gpu.count, gl.UNSIGNED_INT, 0);
+      } else {
+        gl.drawArrays(gl.TRIANGLES, 0, gpu.count);
+      }
+      gl.disable(gl.POLYGON_OFFSET_FILL);
+      gl.bindVertexArray(null);
+      this.drawCount++;
+      this.modelDrawCount++;
+      return true;
+    }
+    /**
+     * Hand the WebGL context back.
+     *
+     * A browser allows only about 16 live contexts and silently kills the oldest beyond that,
+     * so a gallery that builds a player per card blanks its earliest documents unless each one
+     * releases. The shader renderer already did this; this one never did, which is the same
+     * leak with a second cause.
+     */
+    destroy() {
+      const gl = this.gl;
+      if (!gl) return;
+      for (const m of this.gpuMeshes.values()) {
+        gl.deleteVertexArray(m.vao);
+        gl.deleteBuffer(m.vbo);
+        if (m.ibo) gl.deleteBuffer(m.ibo);
+      }
+      this.gpuMeshes.clear();
+      this.modelUniforms.clear();
+      if (this.texture) gl.deleteTexture(this.texture);
+      const lose = gl.getExtension("WEBGL_lose_context");
+      if (lose) lose.loseContext();
+      this.gl = null;
+      this.program = null;
+      this.modelProgSmooth = null;
+      this.modelProgFlat = null;
+      this.texture = null;
+      this.texSource = null;
+      this.passStarted = false;
     }
   };
 
@@ -27339,6 +27821,7 @@ void main() {
       /** The supersampling factor the 3D buffers were last sized with. */
       this.d3Super = 1;
       this.supersample3D = _CanvasPaintContext.supersample3D;
+      this.gpuForSoftware3D = _CanvasPaintContext.gpuForSoftware3D;
       if (!canvas) {
         throw new Error("CanvasPaintContext: canvas rendering context is null or undefined");
       }
@@ -27349,6 +27832,10 @@ void main() {
       if (this.shaderRenderer) {
         this.shaderRenderer.destroy();
         this.shaderRenderer = null;
+      }
+      if (this.d3gl) {
+        this.d3gl.destroy();
+        this.d3gl = null;
       }
     }
     getCanvas() {
@@ -29255,6 +29742,7 @@ void main() {
     }
     defineMesh3D(id, indices, verts, normals, uv = null) {
       this.ensure3D().defineMesh3D(id, indices, verts, normals, uv);
+      if (this.d3gl) this.d3gl.invalidateMesh(id);
     }
     setCamera3D(projection, projParams, viewParams) {
       this.ensure3D().setCamera3D(projection, projParams, viewParams);
@@ -29264,6 +29752,9 @@ void main() {
     }
     clearDepth3D() {
       this.ensure3D().clearDepth3D();
+      if (this.d3gl && this.d3gl.isAvailable()) {
+        this.d3gl.beginPass(this.ctx.canvas.width, this.ctx.canvas.height);
+      }
     }
     setLights3D(types, colors, params) {
       this.ensure3D().setLights3D(types, colors, params);
@@ -29316,8 +29807,14 @@ void main() {
     drawMesh3D(meshId, mode) {
       const ctx3d = this.ensure3D();
       ctx3d.setBaseColorArgb(this.colorArgb);
-      const backend = mode >> 1;
+      let backend = mode >> 1;
       const wire = (mode & MODE_WIREFRAME) !== 0;
+      if (backend === MODE_BACKEND_SOFTWARE && this.gpuForSoftware3D) backend = MODE_BACKEND_GL;
+      if (!wire && backend === MODE_BACKEND_GL) {
+        if (this.drawMesh3DModelSpace(ctx3d, meshId, (mode & MODE_SMOOTH_MASK) !== 0)) {
+          return;
+        }
+      }
       if (!wire && (backend === MODE_BACKEND_CANVAS || backend === MODE_BACKEND_CANVAS_ZBUF)) {
         if (this.drawMesh3DGl(
           ctx3d,
@@ -29330,6 +29827,33 @@ void main() {
       }
       ctx3d.drawMesh3D(meshId, mode);
       this.blit3D();
+    }
+    /**
+     * GL backend (modes 6/7): the real GPU pipeline.
+     *
+     * The difference from the canvas backends is where the work happens. They transform,
+     * light, clip and project every vertex on the CPU each frame and hand the GPU a fresh
+     * screen-space triangle list; here the geometry is uploaded once and the matrices and
+     * lights go down as uniforms, so a static mesh costs no per-frame CPU geometry at all.
+     *
+     * Returns false if WebGL2 is unavailable, so the caller can fall back to software.
+     */
+    drawMesh3DModelSpace(ctx3d, meshId, smooth) {
+      if (this.d3gl === null) this.d3gl = new WebGL3DRenderer();
+      const gl = this.d3gl;
+      if (!gl.isAvailable()) return false;
+      const mesh = ctx3d.getMesh(meshId);
+      if (!mesh) return true;
+      const useSmooth = smooth && mesh.normals !== null;
+      const w = ctx3d.getWidth(), h = ctx3d.getHeight();
+      const tex = ctx3d.getTextureData();
+      gl.setTexture(tex.pixels, tex.width, tex.height);
+      if (!gl.drawModelSpace(meshId, mesh, ctx3d.getGlFrame(), useSmooth, w, h)) {
+        return false;
+      }
+      this.ctx.drawImage(gl.getCanvas(), 0, 0, w, h);
+      globalThis.__rcGlModelDraws = gl.modelDrawCount;
+      return true;
     }
     /**
      * Canvas backend: rasterize on the GPU and composite the result.
@@ -29435,6 +29959,17 @@ void main() {
    * RC.CanvasPaintContext.supersample3D, or per context.
    */
   _CanvasPaintContext.supersample3D = 1;
+  /**
+   * Draw the software modes (0/1, software flat and smooth) on the GL backend when WebGL2 is
+   * there, as if the document had asked for modes 6/7. Documents mostly say "flat" or
+   * "smooth" and mean "draw it"; on a web page the software rasterizer costs a whole frame
+   * for a scene the GPU draws in a millisecond (a 68-mesh engine at 1225x932: 2 fps against
+   * 31). The picture differs from software only by GL_DIVERGENCES (WebGL3DRenderer.ts).
+   * Wireframe stays software (it needs the depth buffer the software path owns), and so
+   * does everything when WebGL2 is unavailable. False keeps the software path for modes
+   * 0/1 (a parity test's reference). RC.CanvasPaintContext.gpuForSoftware3D, or per context.
+   */
+  _CanvasPaintContext.gpuForSoftware3D = true;
   var CanvasPaintContext = _CanvasPaintContext;
 
   // ../kobento-ts/src/core/DefaultSystemColors.ts
@@ -31063,6 +31598,9 @@ void main() {
       doc.setHeight(docHeight);
       if (this.paintContext) this.paintContext.dispose();
       this.paintContext = new CanvasPaintContext(null, this.ctx);
+      if (this.paintContext.gpuForSoftware3D && drawsWireframe3D(doc.getOperations())) {
+        this.paintContext.gpuForSoftware3D = false;
+      }
       this.paintContext.setBitmapVideos(this.bitmapVideos);
       this.remoteContext = new WebRemoteContext(this.paintContext);
       doc.initializeContext(this.remoteContext);
